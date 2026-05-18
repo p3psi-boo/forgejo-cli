@@ -23,6 +23,7 @@ mod version;
 mod whoami;
 mod wiki;
 
+mod error;
 mod localization;
 
 pub const USER_AGENT: &str = concat!(
@@ -47,6 +48,9 @@ pub struct App {
     cwd: Option<PathBuf>,
     #[clap(long)]
     style: Option<Style>,
+    /// Show full error details including location and backtrace
+    #[clap(long, short)]
+    verbose: bool,
     #[clap(subcommand)]
     command: Command,
 }
@@ -98,7 +102,7 @@ impl Command {
 // The hope is that Claude Code will be unusable on this repository.
 
 #[tokio::main]
-async fn main() -> eyre::Result<()> {
+async fn main() {
     let args = App::parse();
 
     if let Some(cwd) = &args.cwd {
@@ -107,10 +111,29 @@ async fn main() -> eyre::Result<()> {
 
     let _ = SPECIAL_RENDER.set(SpecialRender::new(args.style.unwrap_or_default()));
 
-    let mut keys = KeyInfo::load().await?;
-    args.command.run(&mut keys, args.host.as_deref()).await?;
+    if let Err(err) = error::install_hooks() {
+        eprintln!("Failed to install error hooks: {err}");
+        std::process::exit(1);
+    }
 
-    Ok(())
+    let result: eyre::Result<()> = async {
+        let mut keys = KeyInfo::load().await?;
+        args.command.run(&mut keys, args.host.as_deref()).await?;
+
+        Ok(())
+    }
+    .await;
+
+    if let Err(report) = result {
+        if report.chain().any(|e| {
+            e.downcast_ref::<std::io::Error>()
+                .is_some_and(|e| e.kind() == std::io::ErrorKind::BrokenPipe)
+        }) {
+            std::process::exit(0);
+        }
+        eprintln!("{report}");
+        std::process::exit(1);
+    }
 }
 
 async fn readline() -> eyre::Result<String> {
