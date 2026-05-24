@@ -36,9 +36,9 @@ pub const USER_AGENT: &str = concat!(
 
 #[derive(Parser, Debug)]
 pub struct App {
-    #[clap(long, short = 'H')]
+    #[clap(long, short = 'H', env = "FJ_HOST")]
     host: Option<String>,
-    #[clap(long)]
+    #[clap(long, env = "FJ_STYLE")]
     style: Option<Style>,
     #[clap(subcommand)]
     command: Command,

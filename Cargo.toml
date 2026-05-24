@@ -28,7 +28,7 @@ update-check = ["dep:semver"]
 auth-git2 = "0.6.0"
 base64ct = { version = "1.7.3", features = ["std"] }
 cfg-if = "1.0.0"
-clap = { version = "4.5.34", features = ["derive"] }
+clap = { version = "4.5.34", features = ["derive", "env"] }
 clap_complete = "4.5.47"
 comrak = { version = "0.52.0", default-features = false }
 crossterm = "0.29.0"
