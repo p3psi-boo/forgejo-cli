@@ -2,18 +2,6 @@ use std::backtrace::{Backtrace, BacktraceStatus};
 
 use eyre::EyreHandler;
 
-// handler
-// {red}error{red}: message
-//
-// {blue}suggestion{/}: message
-//
-// {green}note{/}: message
-//
-// IF not expected
-// Please report the issue at: URL
-//
-// IF backtrace enabled
-// backtrace-colored
 pub fn install_hooks() -> eyre::Result<()> {
     // Keep color-eyre's panic hook (rich panic output), but discard its eyre
     // hook in favour of our own `Handler` below.
@@ -26,6 +14,21 @@ pub fn install_hooks() -> eyre::Result<()> {
     Ok(())
 }
 
+/// Renders every [`eyre::Report`] in one consistent, colored layout. Sections
+/// are written in this order, blank-line separated, each shown only when it has
+/// content (colors come from [`crate::special_render`], so `--style minimal`
+/// and non-terminal output drop the escape codes):
+///
+/// ```text
+/// error: <message>                          bright red + bold
+/// caused by: <source>                       cyan, one per cause in the chain
+/// suggestion: <text>                        bright blue, one per `.suggestion(..)`
+/// note: <text>                              bright green, one per `.note(..)`
+/// Please report the issue at: <repo>/issues only when not `.expected()`
+/// Stack backtrace:                          faint, only when RUST_BACKTRACE is set
+/// ```
+///
+/// Use [`Section`] to attach suggestions/notes and mark user errors as expected.
 #[derive(Debug, Default)]
 struct Handler {
     suggestions: Vec<String>,
