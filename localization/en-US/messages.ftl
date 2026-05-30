@@ -756,12 +756,12 @@ msg-pr-search-count = {$pull_requests ->
 msg-pr-search-entry = #{$number}: {$title} (by {$author})
 
 msg-repo-no_host_given = cannot find repo, no host specified
-msg-repo-no_info_given =
-    no repo info specified
-
-    If you're trying to operate on a repository in the current directory, try adding a remote
-    referencing the forgejo instance. If you have multiple remotes, try setting one as upstream to the
-    current branch. You may also specify a host explicitly using the `--host` argument.
+msg-repo-no_host_given-suggestion = specify a host explicitly using the `--host` argument
+msg-repo-no_info_given = no repo info specified
+msg-repo-no_info_given-suggestion-remote =
+    if you're operating on the repository in the current directory, add a remote referencing the
+    forgejo instance, or set one as upstream to the current branch if you have several
+msg-repo-no_info_given-suggestion-host = specify a host explicitly using the `--host` argument
 
 msg-repo-fallback_host-invalid_url = warn: `FJ_FALLBACK_HOST` is not set to a valid url
 

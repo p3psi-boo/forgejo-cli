@@ -9,8 +9,8 @@ use forgejo_api::{
 use url::Url;
 
 use crate::{
-    ftl_bail, ftl_eprintln, ftl_eyre, ftl_format, ftl_print, ftl_println, ftl_write, h, lh,
-    DisplayOptional, SpecialRender,
+    error::Section, ftl_bail, ftl_eprintln, ftl_eyre, ftl_format, ftl_print, ftl_println,
+    ftl_write, h, lh, DisplayOptional, SpecialRender,
 };
 
 pub struct RepoInfo {
@@ -200,8 +200,17 @@ impl RepoInfo {
                 name,
                 remote_name: final_remote_name,
             },
-            (None, Some(_)) => ftl_bail!("msg-repo-no_host_given"),
-            (None, None) => ftl_bail!("msg-repo-no_info_given"),
+            (None, Some(_)) => {
+                return Err(ftl_eyre!("msg-repo-no_host_given")
+                    .suggestion(ftl_format!("msg-repo-no_host_given-suggestion"))
+                    .expected())
+            }
+            (None, None) => {
+                return Err(ftl_eyre!("msg-repo-no_info_given")
+                    .suggestion(ftl_format!("msg-repo-no_info_given-suggestion-remote"))
+                    .suggestion(ftl_format!("msg-repo-no_info_given-suggestion-host"))
+                    .expected())
+            }
         };
 
         Ok(info)

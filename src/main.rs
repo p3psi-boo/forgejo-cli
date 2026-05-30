@@ -131,7 +131,7 @@ async fn main() {
         }) {
             std::process::exit(0);
         }
-        eprintln!("{report}");
+        eprintln!("{report:?}");
         std::process::exit(1);
     }
 }
@@ -389,6 +389,7 @@ struct SpecialRender {
     clear_line: &'static str,
 
     italic: &'static str,
+    faint: &'static str,
     bold: &'static str,
     strike: &'static str,
     no_italic_bold: &'static str,
@@ -440,6 +441,7 @@ impl SpecialRender {
             clear_line: "\x1b[2K",
 
             italic: "\x1b[3m",
+            faint: "\x1b[2m",
             bold: "\x1b[1m",
             strike: "\x1b[9m",
             no_italic_bold: "\x1b[23m",
@@ -482,6 +484,7 @@ impl SpecialRender {
             clear_line: "",
 
             italic: "",
+            faint: "",
             bold: "",
             strike: "~~",
             no_italic_bold: "",

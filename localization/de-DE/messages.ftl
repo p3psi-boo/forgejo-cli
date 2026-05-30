@@ -323,13 +323,13 @@ msg-pr-search-count =
 msg-pr-search-entry = #{ $number }: { $title } (von { $author })
 msg-pr-view-diff-volatile = Änderungen in der Diff werden nicht beibehalten.
 msg-repo-no_host_given = Repo kann nicht gefunden werden, keinen Host angegeben.
-msg-repo-no_info_given =
-    Keine Repoinformationen angegeben.
-
-    Wenn Sie versuchen, mit dem Repo im momentanen Ordner zu arbeiten, versuchen Sie, ein Remote
-    hinzuzufügen, die die Forgejoinstanz referenziert. Wenn Sie mehrere Remotes haben, versuchen Sie,
-    eines davon als Upstream des momentanen Branches zu setzen.
-    Sie können auch mit dem `--host`-Argument explizit einen Host angeben.
+msg-repo-no_host_given-suggestion = Geben Sie mit dem `--host`-Argument explizit einen Host an.
+msg-repo-no_info_given = Keine Repoinformationen angegeben.
+msg-repo-no_info_given-suggestion-remote =
+    Wenn Sie mit dem Repo im momentanen Ordner arbeiten, fügen Sie ein Remote hinzu, das die
+    Forgejoinstanz referenziert, oder setzen Sie eines als Upstream des momentanen Branches, wenn Sie
+    mehrere haben.
+msg-repo-no_info_given-suggestion-host = Geben Sie mit dem `--host`-Argument explizit einen Host an.
 msg-repo-fallback_host-invalid_url = Warnung: `FJ_FALLBACK_HOST` ist keine gültige URL!
 msg-repo-arg_no_owner = Reponame sollte im Format [HOST/]OWNER/NAME sein.
 msg-repo-name_needed = Reponame konnte nicht gefunden werden, bitte angeben.
