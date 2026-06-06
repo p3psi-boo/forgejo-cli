@@ -11,7 +11,7 @@ You can...
 
 - Open, edit, comment on, close issues
 - Create and merge pull requests
-  - Easily create AGit pull requests, no need to fork!
+  - Easily create Git pull requests, no need to fork!
 - Create, star, watch, and edit repositories
 - Manage organizations and teams
 - Publish new releases
