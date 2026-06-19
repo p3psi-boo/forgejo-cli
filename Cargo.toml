@@ -46,7 +46,10 @@ eyre = "0.6.12"
 fluent-bundle = "0.16.0"
 fluent-datetime = "0.2.0"
 fluent-syntax = "0.12.0"
-forgejo-api = "0.10.0"
+# forgejo-api git dep: adds the Actions log endpoints needed by `actions logs`/
+# `actions jobs` (forgejo/forgejo#12666). See Cyborus/forgejo-api#155. Revert to
+# the published crate version once that lands.
+forgejo-api = { git = "https://codeberg.org/tibrez/forgejo-api.git", branch = "feat/actions-log-api" }
 futures = "0.3.31"
 git2 = { version = "0.21.0", features = ["https", "ssh"] }
 hyper = "1.6.0"

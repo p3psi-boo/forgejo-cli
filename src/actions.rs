@@ -62,6 +62,30 @@ pub enum ActionsSubcommand {
         #[clap(long, short = 'I', value_parser = parse_dispatch_kvs)]
         inputs: Vec<(String, String)>,
     },
+
+    /// List the jobs in an action run (Forgejo v16+, forgejo/forgejo#12666)
+    Jobs {
+        /// The action run id
+        run: i64,
+    },
+
+    /// View the logs of an action run or job (Forgejo v16+, forgejo/forgejo#12666)
+    Logs {
+        /// Print a single job's logs as plain text. Takes precedence over --run.
+        ///
+        /// Use `jobs` to find the job id.
+        #[clap(long)]
+        job: Option<i64>,
+
+        /// Download all jobs' logs for a run as a zip archive.
+        #[clap(long)]
+        run: Option<i64>,
+
+        /// File to write the run's zip archive to (default: run-<id>-logs.zip).
+        /// Only meaningful with --run.
+        #[clap(long)]
+        out: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Clone, Debug)]
@@ -151,6 +175,12 @@ impl ActionsCommand {
                 r#ref,
                 inputs,
             } => dispatch(repo, &api, name, r#ref, inputs.into_iter().collect()).await?,
+
+            ActionsSubcommand::Jobs { run } => list_jobs(repo, &api, run).await?,
+
+            ActionsSubcommand::Logs { job, run, out } => {
+                view_logs(repo, &api, job, run, out).await?
+            }
         }
 
         Ok(())
@@ -350,6 +380,70 @@ async fn delete_secret(repo: &RepoName, api: &Forgejo, name: String) -> eyre::Re
         .await?;
 
     Ok(())
+}
+
+async fn view_logs(
+    repo: &RepoName,
+    api: &Forgejo,
+    job: Option<i64>,
+    run: Option<i64>,
+    out: Option<String>,
+) -> eyre::Result<()> {
+    use std::io::Write as _;
+    if let Some(job_id) = job {
+        let bytes = api
+            .repo_get_action_job_logs(repo.owner(), repo.name(), job_id)
+            .await?;
+        std::io::stdout().write_all(&bytes)?;
+        return Ok(());
+    }
+    if let Some(run_id) = run {
+        let bytes = api
+            .repo_get_action_run_logs(repo.owner(), repo.name(), run_id)
+            .await?;
+        let path = out.unwrap_or_else(|| format!("run-{run_id}-logs.zip"));
+        std::fs::write(&path, &bytes)?;
+        println!(
+            "wrote {} bytes ({} jobs) to {path}",
+            bytes.len(),
+            zip_entry_count(&bytes).unwrap_or(0)
+        );
+        return Ok(());
+    }
+    eyre::bail!("must specify --job <ID> or --run <ID>");
+}
+
+async fn list_jobs(repo: &RepoName, api: &Forgejo, run: i64) -> eyre::Result<()> {
+    let jobs = api
+        .list_action_run_jobs(repo.owner(), repo.name(), run)
+        .await?;
+    if jobs.is_empty() {
+        println!("no jobs");
+        return Ok(());
+    }
+    for j in jobs {
+        println!(
+            "#{} {} [{}] runs_on:{}",
+            j.id.unwrap_or(0),
+            j.name.unwrap_or_default(),
+            j.status.unwrap_or_default(),
+            j.runs_on.unwrap_or_default().join(","),
+        );
+    }
+    Ok(())
+}
+
+/// Count entries in a zip archive by reading the End-of-Central-Directory
+/// record, without pulling in a zip crate dependency.
+fn zip_entry_count(zip: &[u8]) -> Option<u16> {
+    let eocd = b"PK\x05\x06";
+    let idx = zip.windows(4).rposition(|w| w == eocd)?;
+    // [sig 4][disk 2][disk_cd 2][entries_this_disk 2][entries_total 2]
+    let off = idx + 10;
+    if off + 2 > zip.len() {
+        return None;
+    }
+    Some(u16::from_le_bytes([zip[off], zip[off + 1]]))
 }
 
 async fn dispatch(

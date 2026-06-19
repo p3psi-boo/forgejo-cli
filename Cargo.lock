@@ -633,8 +633,7 @@ checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 [[package]]
 name = "forgejo-api"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f855a38f4ebd722f5955cb482cd051fe6499f9cfaab2f3cabf955d4c32c1327d"
+source = "git+https://codeberg.org/tibrez/forgejo-api.git?branch=feat%2Factions-log-api#4823bfc8283a22d1882d31d87d85f92356e3b17e"
 dependencies = [
  "base64ct",
  "bytes",
