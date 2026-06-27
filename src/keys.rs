@@ -18,9 +18,9 @@ pub struct KeyInfo {
 
 impl KeyInfo {
     pub async fn load() -> eyre::Result<Self> {
-        let path = directories::ProjectDirs::from("", "Cyborus", "forgejo-cli")
+        let path = dirs::data_dir()
             .ok_or_else(|| eyre!("Could not find data directory"))?
-            .data_dir()
+            .join("forgejo-cli")
             .join("keys.json");
         let json = tokio::fs::read(path).await;
         let this = match json {
@@ -36,11 +36,11 @@ impl KeyInfo {
 
     pub async fn save(&self) -> eyre::Result<()> {
         let json = serde_json::to_vec_pretty(self)?;
-        let dirs = directories::ProjectDirs::from("", "Cyborus", "forgejo-cli")
-            .ok_or_else(|| eyre!("Could not find data directory"))?;
-        let path = dirs.data_dir();
+        let path = dirs::data_dir()
+            .ok_or_else(|| eyre!("Could not find data directory"))?
+            .join("forgejo-cli");
 
-        tokio::fs::create_dir_all(path).await?;
+        tokio::fs::create_dir_all(&path).await?;
 
         let mut options = std::fs::OpenOptions::new();
         options.create(true).write(true).truncate(true);

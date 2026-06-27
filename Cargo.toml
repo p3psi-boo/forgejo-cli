@@ -40,7 +40,7 @@ cfg-if = "1.0.0"
 clap = { version = "4.5.34", features = ["derive"] }
 clap_complete = "4.5.47"
 comrak = { version = "0.52.0", default-features = false }
-directories = "6.0.0"
+dirs = "6.0.0"
 eyre = "0.6.12"
 fluent-bundle = "0.16.0"
 fluent-datetime = "0.2.0"

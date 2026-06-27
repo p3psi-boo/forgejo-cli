@@ -116,15 +116,15 @@ pub async fn get_client_info_for(url: &url::Url) -> eyre::Result<Option<String>>
     let host = host.strip_suffix("/").unwrap_or(host);
     let mut possible_paths = Vec::with_capacity(3);
 
-    // On MacOS, `directories::ProjectDirs` doesn't include the `.config` path
-    // like it does on Linux.
+    // On MacOS, `dirs::config_dir` doesn't include the `.config` path like it
+    // does on Linux.
     #[cfg(target_os = "macos")]
-    if let Some(user_dirs) = directories::UserDirs::new() {
-        possible_paths.push(user_dirs.home_dir().join(".config/forgejo-cli/client_ids"));
+    if let Some(home) = dirs::home_dir() {
+        possible_paths.push(home.join(".config/forgejo-cli/client_ids"));
     }
 
-    if let Some(dirs) = directories::ProjectDirs::from("", "Cyborus", "forgejo-cli") {
-        possible_paths.push(dirs.config_dir().join("client_ids"));
+    if let Some(config_dir) = dirs::config_dir() {
+        possible_paths.push(config_dir.join("forgejo-cli").join("client_ids"));
     }
 
     #[cfg(unix)]

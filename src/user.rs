@@ -1121,9 +1121,8 @@ async fn upload_key(
     let file = if let Some(file) = file {
         std::path::PathBuf::from(file)
     } else {
-        let ssh_dir = directories::UserDirs::new()
+        let ssh_dir = dirs::home_dir()
             .ok_or_else(|| ftl_eyre!("msg-user-key-upload-home_not_found"))?
-            .home_dir()
             .join(".ssh");
 
         let mut dirstream = tokio::fs::read_dir(ssh_dir).await?;
