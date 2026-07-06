@@ -125,12 +125,6 @@ help-cmd-auth-use_ssh = Вкл./выкл. использование SSH по у
 msg-auth-use_ssh-not-logged-in = не выполнен вход в { $host }
 msg-auth-use_ssh-enabled = теперь по умолчанию для { $host } будет использован SSH
 msg-auth-use_ssh-disabled = теперь по умолчанию для { $host } НЕ будет использован SSH
-help-cmd-auth-add_key = Добавить токен приложения для сервера
-help-cmd-auth-add_key-long =
-    Добавить токен приложения для сервера
-
-    Используйте, если `fj auth login` не работает.
-help-arg-auth-add_key-key = Добавляемый ключ. Если не указан, будет прочитан из стд. ввода
 help-cmd-auth-list = Список всех серверов, на которых выполнен вход
 help-cmd-actions-secrets = Список и управление секретами
 help-cmd-actions-secrets-list = Вывести секреты списком

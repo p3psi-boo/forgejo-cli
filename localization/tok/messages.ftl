@@ -477,12 +477,6 @@ help-cmd-auth-login-long =
 
     lipu pi alasa ken li open lon ilo linluwi sina
 help-cmd-auth-logout = o weka e sona ni: sijelo sina pi ma wan
-help-cmd-auth-add_key = o pana e nimi len ilo pi ma wan
-help-cmd-auth-add_key-long =
-    o pana e nimi len ilo pi ma wan
-
-    sina ken ala kepeken `fj auth login` la, o kepeken ni
-help-arg-auth-add_key-key = o pana e nimi len ilo seme
 help-cmd-auth-list = o lukin e sijelo sina ale
 help-arg-actions-tasks-page = o lukin e kulupu alasa nanpa seme
 help-cmd-actions-variables = o lawa e ijo sona ona

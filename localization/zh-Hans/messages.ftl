@@ -641,12 +641,6 @@ help-cmd-auth-login-long =
     在浏览器中打开认证页面
 help-cmd-auth-logout = 删除实例的登录信息
 help-cmd-auth-use_ssh = 启用或禁用在特定实例中默认使用 SSH
-help-cmd-auth-add_key = 为实例添加应用程序令牌
-help-cmd-auth-add_key-long =
-    为实例添加应用程序令牌
-
-    如果 `fj auth login` 无效，请使用此选项。
-help-arg-auth-add_key-key = 要添加的密钥。如果未提供，将从标准输入读取密钥
 help-cmd-auth-list = 列出您当前已登录的所有实例
 help-cmd-actions-tasks = 列出仓库上的任务
 help-arg-actions-tasks-page = 要显示的页码。每页最多包含 20 个任务

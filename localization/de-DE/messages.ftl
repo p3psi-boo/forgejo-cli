@@ -643,12 +643,6 @@ help-cmd-auth-login-long =
     Öffnet eine Anmeldeseite in ihrem Webbrowser
 help-cmd-auth-logout = Löscht die lokalen Login Daten zu einer Instanz
 help-cmd-auth-use_ssh = (De-)aktiviert SSH als Standard für gegebene Instanzen
-help-cmd-auth-add_key = Fügt ein Anwendungstoken für eine Instanz hinzu
-help-cmd-auth-add_key-long =
-    Fügt ein Anwendungstoken für eine Instanz hinzu
-
-    Verwenden sie diese Option, wenn `fj auth login` nicht funktionieren sollte.
-help-arg-auth-add_key-key = Der Schlüssel, der hinzugefügt werden soll. Ist dieser nicht vorhanden wird er aus der Standardeingabe gelesen
 help-cmd-auth-list = Zählt alle Instanzen auf, auf denen sie aktuell angemeldet sind
 help-cmd-actions-variables-list = Zählt die Variablen auf
 help-arg-actions-variables-list-verbose = owner_id und repo_id werden ebenfalls ausgegeben
