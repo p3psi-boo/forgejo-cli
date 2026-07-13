@@ -22,21 +22,19 @@ pub fn install_hooks() -> eyre::Result<()> {
 /// ```text
 /// error: <message>                          bright red + bold
 /// caused by: <source>                       cyan, one per cause in the chain
-/// suggestion: <text>                        bright blue, one per `.suggestion(..)`
-/// note: <text>                              bright green, one per `.note(..)`
+/// suggestion: <text>                        green, one per `.suggestion(..)`
 /// Please report the issue at: <repo>/issues only when not `.expected()`
 /// Stack backtrace:                          faint, only when RUST_BACKTRACE is set
 /// ```
 ///
-/// Use [`Section`] to attach suggestions/notes and mark user errors as expected.
-#[derive(Debug, Default)]
+/// Use [`Section`] to attach suggestions and mark user errors as expected.
+#[derive(Debug)]
 struct Handler {
     suggestions: Vec<String>,
-    notes: Vec<String>,
     /// `true` = user mistake: show suggestions, hide the "please report" line.
     /// `false` = internal/unexpected error (the default).
     expected: bool,
-    backtrace: Option<Backtrace>,
+    backtrace: Backtrace,
 }
 
 impl Handler {
@@ -45,9 +43,8 @@ impl Handler {
         let backtrace = Backtrace::capture();
         Self {
             suggestions: Vec::new(),
-            notes: Vec::new(),
             expected: false,
-            backtrace: (backtrace.status() == BacktraceStatus::Captured).then_some(backtrace),
+            backtrace,
         }
     }
 }
@@ -70,18 +67,9 @@ impl EyreHandler for Handler {
             source = cause.source();
         }
 
-        // {blue}suggestion{/}: message
+        // {green}suggestion{/}: message
         for suggestion in &self.suggestions {
-            write!(
-                f,
-                "\n\n{}suggestion{}: {suggestion}",
-                r.bright_blue, r.reset
-            )?;
-        }
-
-        // {green}note{/}: message
-        for note in &self.notes {
-            write!(f, "\n\n{}note{}: {note}", r.bright_green, r.reset)?;
+            write!(f, "\n\n{}suggestion{}: {suggestion}", r.green, r.reset)?;
         }
 
         // IF not expected: Please report the issue at: URL
@@ -94,8 +82,12 @@ impl EyreHandler for Handler {
         }
 
         // IF backtrace enabled: backtrace-colored
-        if let Some(backtrace) = &self.backtrace {
-            write!(f, "\n\nStack backtrace:\n{}{backtrace}{}", r.faint, r.reset)?;
+        if self.backtrace.status() == BacktraceStatus::Captured {
+            write!(
+                f,
+                "\n\nStack backtrace:\n{}{}{}",
+                r.faint, self.backtrace, r.reset
+            )?;
         }
 
         Ok(())
@@ -112,9 +104,6 @@ impl EyreHandler for Handler {
 /// ```
 pub trait Section: Sized {
     fn suggestion(self, suggestion: impl Into<String>) -> Self;
-    // Not yet used by any call site, but part of the format (see #448 follow-up).
-    #[allow(dead_code)]
-    fn note(self, note: impl Into<String>) -> Self;
     /// Mark this error as a user mistake: suppresses the "Please report" line.
     fn expected(self) -> Self;
 }
@@ -123,13 +112,6 @@ impl Section for eyre::Report {
     fn suggestion(mut self, suggestion: impl Into<String>) -> Self {
         if let Some(handler) = self.handler_mut().downcast_mut::<Handler>() {
             handler.suggestions.push(suggestion.into());
-        }
-        self
-    }
-
-    fn note(mut self, note: impl Into<String>) -> Self {
-        if let Some(handler) = self.handler_mut().downcast_mut::<Handler>() {
-            handler.notes.push(note.into());
         }
         self
     }
@@ -145,10 +127,6 @@ impl Section for eyre::Report {
 impl<T> Section for eyre::Result<T> {
     fn suggestion(self, suggestion: impl Into<String>) -> Self {
         self.map_err(|report| report.suggestion(suggestion))
-    }
-
-    fn note(self, note: impl Into<String>) -> Self {
-        self.map_err(|report| report.note(note))
     }
 
     fn expected(self) -> Self {
