@@ -105,10 +105,6 @@ impl Command {
 async fn main() {
     let args = App::parse();
 
-    if let Some(cwd) = &args.cwd {
-        std::env::set_current_dir(cwd)?;
-    }
-
     let _ = SPECIAL_RENDER.set(SpecialRender::new(args.style.unwrap_or_default()));
 
     if let Err(err) = error::install_hooks() {
@@ -117,6 +113,10 @@ async fn main() {
     }
 
     let result: eyre::Result<()> = async {
+        if let Some(cwd) = &args.cwd {
+            std::env::set_current_dir(cwd)?;
+        }
+
         let mut keys = KeyInfo::load().await?;
         args.command.run(&mut keys, args.host.as_deref()).await?;
 
@@ -1106,7 +1106,7 @@ pub async fn edit_labels(
 
     if !unknown_labels.is_empty() {
         if unknown_labels.len() == 1 {
-            println!("'{}' doesn't exist", &unknown_labels[0]);
+            println!("'{}' doesn't exist", unknown_labels[0]);
         } else {
             let SpecialRender { bullet, .. } = *crate::special_render();
             println!("The following labels don't exist:");
