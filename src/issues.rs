@@ -10,7 +10,7 @@ use forgejo_api::structs::{
 };
 
 use crate::repo::{RepoArg, RepoInfo, RepoName};
-use crate::{ftl_bail, ftl_ensure, ftl_eprintln, ftl_println, h, lh};
+use crate::{ftl_bail, ftl_ensure, ftl_eprintln, ftl_eyre, ftl_println, h, lh};
 
 pub mod template;
 
@@ -115,6 +115,10 @@ pub enum IssueSubcommand {
         #[clap(help = h!("arg-issue-search-state"))]
         #[clap(long, short)]
         state: Option<State>,
+
+        #[clap(help = h!("arg-issue-search-hide_blocked"))]
+        #[clap(long)]
+        hide_blocked: bool,
     },
     #[clap(about = h!("cmd-issue-view"))]
     View {
@@ -273,7 +277,20 @@ impl IssueCommand {
                 creator,
                 assignee,
                 state,
-            } => view_issues(repo, &api, query, labels, creator, assignee, state).await?,
+                hide_blocked,
+            } => {
+                view_issues(
+                    repo,
+                    &api,
+                    query,
+                    labels,
+                    creator,
+                    assignee,
+                    state,
+                    hide_blocked,
+                )
+                .await?
+            }
             Templates { .. } => view_issue_templates(repo, &api).await?,
             Edit { issue, command } => match command {
                 EditCommand::Title { new_title } => {
@@ -543,6 +560,7 @@ pub async fn view_issue(repo: &RepoName, api: &Forgejo, number: i64) -> eyre::Re
     ftl_println!("msg-issue-view-comment_count", comments);
     Ok(())
 }
+#[allow(clippy::too_many_arguments)]
 async fn view_issues(
     repo: &RepoName,
     api: &Forgejo,
@@ -551,6 +569,7 @@ async fn view_issues(
     creator: Option<String>,
     assignee: Option<String>,
     state: Option<State>,
+    hide_blocked: bool,
 ) -> eyre::Result<()> {
     let labels = labels
         .map(|s| s.split(',').map(|s| s.to_string()).collect::<Vec<_>>())
@@ -568,10 +587,28 @@ async fn view_issues(
         mentioned_by: None,
         sort: None,
     };
-    let issues = api
+    let mut issues = api
         .issue_list_issues(repo.owner(), repo.name(), query)
         .all()
         .await?;
+    if hide_blocked {
+        let mut kept = Vec::with_capacity(issues.len());
+        for issue in issues {
+            let number = issue
+                .number
+                .ok_or_else(|| ftl_eyre!("msg-issue-no-number"))?;
+            let blockers = api
+                .issue_list_issue_dependencies(repo.owner(), repo.name(), number)
+                .await?;
+            let blocked = blockers
+                .iter()
+                .any(|b| b.state == Some(forgejo_api::structs::StateType::Open));
+            if !blocked {
+                kept.push(issue);
+            }
+        }
+        issues = kept;
+    }
     ftl_println!("msg-issue-search-total", issues = issues.len());
     for issue in issues {
         let number = issue

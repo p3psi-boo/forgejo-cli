@@ -423,11 +423,13 @@ help-cmd-issue-view-comments = List every comment
 help-cmd-issue-search = Search for an issue in a repo
 help-arg-issue-search-repo = The repo to search in
 help-arg-issue-search-state = Filter issues by state. Default: open
+help-arg-issue-search-hide_blocked = Hide issues that are blocked by at least one open dependency
 msg-issue-search-total = { $issues ->
         [one] 1 issue
        *[other] {$issues} issues
     }
 msg-issue-search-entry = #{$number}: {$title} (by {$author})
+msg-issue-no-number = Issue does not have a number
 
 help-cmd-issue-templates = List the issue templates in a repo
 help-arg-issue-templates-repo = The repo to view the templates of
