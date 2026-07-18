@@ -753,11 +753,13 @@ help-arg-pr-browse-id = The pull request to open in your browser
 help-cmd-pr-search = Search a repository's pull requests
 help-arg-pr-search-state = Filter PRs by state. Default: open
 help-arg-pr-search-repo = The repo to search in
+help-arg-pr-search-hide_blocked = Hide PRs that are blocked by at least one open dependency
 msg-pr-search-count = {$pull_requests ->
         [one] 1 pull request
        *[other] {$pull_requests} pull requests
     }
 msg-pr-search-entry = #{$number}: {$title} (by {$author})
+msg-pr-no-number = Pull request does not have a number
 
 msg-repo-no_host_given = cannot find repo, no host specified
 msg-repo-no_info_given =

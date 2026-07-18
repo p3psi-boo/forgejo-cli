@@ -52,6 +52,10 @@ pub enum PrSubcommand {
         #[clap(help = h!("arg-pr-search-repo"))]
         #[clap(long, short)]
         repo: Option<RepoArg>,
+
+        #[clap(help = h!("arg-pr-search-hide_blocked"))]
+        #[clap(long)]
+        hide_blocked: bool,
     },
     #[clap(about = h!("cmd-pr-create"))]
     Create {
@@ -407,7 +411,20 @@ impl PrCommand {
                 assignee,
                 state,
                 repo: _,
-            } => view_prs(repo, &api, query, labels, creator, assignee, state).await?,
+                hide_blocked,
+            } => {
+                view_prs(
+                    repo,
+                    &api,
+                    query,
+                    labels,
+                    creator,
+                    assignee,
+                    state,
+                    hide_blocked,
+                )
+                .await?
+            }
             Assign { pr, users } => {
                 let (repo, pr) = try_get_pr_number(repo, &api, pr.map(|pr| pr.number)).await?;
                 crate::issues::assign_to_issue(&repo, &api, pr, users).await?
@@ -1566,6 +1583,7 @@ async fn checkout_pr(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn view_prs(
     repo: &RepoName,
     api: &Forgejo,
@@ -1574,6 +1592,7 @@ async fn view_prs(
     creator: Option<String>,
     assignee: Option<String>,
     state: Option<crate::issues::State>,
+    hide_blocked: bool,
 ) -> eyre::Result<()> {
     let labels = labels
         .map(|s| s.split(',').map(|s| s.to_string()).collect::<Vec<_>>())
@@ -1591,9 +1610,23 @@ async fn view_prs(
         mentioned_by: None,
         sort: None,
     };
-    let (_, prs) = api
+    let (_, mut prs) = api
         .issue_list_issues(repo.owner(), repo.name(), query)
         .await?;
+    if hide_blocked {
+        let mut kept = Vec::with_capacity(prs.len());
+        for pr in prs {
+            let number = pr.number.ok_or_else(|| ftl_eyre!("msg-pr-no-number"))?;
+            let blockers = api
+                .issue_list_issue_dependencies(repo.owner(), repo.name(), number)
+                .await?;
+            let blocked = blockers.iter().any(|b| b.state == Some(StateType::Open));
+            if !blocked {
+                kept.push(pr);
+            }
+        }
+        prs = kept;
+    }
     ftl_println!("msg-pr-search-count", pull_requests = prs.len());
     for pr in prs {
         let number = pr
