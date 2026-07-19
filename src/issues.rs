@@ -10,7 +10,7 @@ use forgejo_api::structs::{
 };
 
 use crate::repo::{RepoArg, RepoInfo, RepoName};
-use crate::{ftl_bail, ftl_ensure, ftl_eprintln, ftl_println, h, lh};
+use crate::{ftl_bail, ftl_ensure, ftl_eprintln, ftl_eyre, ftl_println, h, lh};
 
 pub mod template;
 
@@ -115,6 +115,11 @@ pub enum IssueSubcommand {
         #[clap(help = h!("arg-issue-search-state"))]
         #[clap(long, short)]
         state: Option<State>,
+
+        #[clap(help = h!("arg-issue-search-upstream"))]
+        #[clap(long, short)]
+        #[clap(conflicts_with = "repo")]
+        upstream: bool,
     },
     #[clap(about = h!("cmd-issue-view"))]
     View {
@@ -276,7 +281,28 @@ impl IssueCommand {
                 creator,
                 assignee,
                 state,
-            } => view_issues(repo, &api, query, labels, creator, assignee, state).await?,
+                upstream,
+            } => {
+                if upstream {
+                    let upstream = api
+                        .repo_get(repo.owner(), repo.name())
+                        .await?
+                        .parent
+                        .ok_or_else(|| ftl_eyre!("msg-pr-checkout-not_fork"))?;
+                    let owner = upstream
+                        .owner
+                        .ok_or_else(|| ftl_eyre!("msg-repo-upstream-no_owner"))?
+                        .login
+                        .ok_or_else(|| ftl_eyre!("msg-repo-upstream-owner-no_name"))?;
+                    let name = upstream
+                        .name
+                        .ok_or_else(|| ftl_eyre!("msg-repo-upstream-no_name"))?;
+                    let repo = RepoName::new(owner, name);
+                    view_issues(&repo, &api, query, labels, creator, assignee, state).await?
+                } else {
+                    view_issues(repo, &api, query, labels, creator, assignee, state).await?
+                }
+            }
             Templates { .. } => view_issue_templates(repo, &api).await?,
             Edit { issue, command } => match command {
                 EditCommand::Title { new_title } => {

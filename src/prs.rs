@@ -52,6 +52,11 @@ pub enum PrSubcommand {
         #[clap(help = h!("arg-pr-search-repo"))]
         #[clap(long, short)]
         repo: Option<RepoArg>,
+
+        #[clap(help = h!("arg-pr-search-upstream"))]
+        #[clap(long, short)]
+        #[clap(conflicts_with = "repo")]
+        upstream: bool,
     },
     #[clap(about = h!("cmd-pr-create"))]
     Create {
@@ -413,7 +418,28 @@ impl PrCommand {
                 assignee,
                 state,
                 repo: _,
-            } => view_prs(repo, &api, query, labels, creator, assignee, state).await?,
+                upstream,
+            } => {
+                if upstream {
+                    let upstream = api
+                        .repo_get(repo.owner(), repo.name())
+                        .await?
+                        .parent
+                        .ok_or_else(|| ftl_eyre!("msg-pr-checkout-not_fork"))?;
+                    let owner = upstream
+                        .owner
+                        .ok_or_else(|| ftl_eyre!("msg-repo-upstream-no_owner"))?
+                        .login
+                        .ok_or_else(|| ftl_eyre!("msg-repo-upstream-owner-no_name"))?;
+                    let name = upstream
+                        .name
+                        .ok_or_else(|| ftl_eyre!("msg-repo-upstream-no_name"))?;
+                    let repo = RepoName::new(owner, name);
+                    view_prs(&repo, &api, query, labels, creator, assignee, state).await?
+                } else {
+                    view_prs(repo, &api, query, labels, creator, assignee, state).await?
+                }
+            }
             Assign { pr, users } => {
                 let (repo, pr) = try_get_pr_number(repo, &api, pr.map(|pr| pr.number)).await?;
                 crate::issues::assign_to_issue(&repo, &api, pr, users).await?
