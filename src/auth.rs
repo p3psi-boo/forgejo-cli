@@ -26,6 +26,20 @@ pub enum AuthCommand {
 }
 
 impl AuthCommand {
+    /// Use the scheme from an explicit `--host http(s)://...`; `host_url()` may
+    /// have been forced to https from an ssh remote to the same instance.
+    fn login_base_url(host_name: Option<&str>, host_url: &url::Url) -> url::Url {
+        let mut url = host_url.clone();
+        if let Some(h) = host_name {
+            if let Ok(parsed) = url::Url::parse(h) {
+                if matches!(parsed.scheme(), "http" | "https") {
+                    url.set_scheme(parsed.scheme()).ok();
+                }
+            }
+        }
+        url
+    }
+
     pub async fn run(self, keys: &mut crate::KeyInfo, host_name: Option<&str>) -> eyre::Result<()> {
         match self {
             AuthCommand::Login => {
@@ -33,7 +47,8 @@ impl AuthCommand {
                 let host_url = repo_info.host_url();
                 let client_info = get_client_info_for(host_url).await?;
                 if let Some(client_id) = &client_info {
-                    oauth_login(keys, host_url, client_id).await?;
+                    let login_url = Self::login_base_url(host_name, host_url);
+                    oauth_login(keys, &login_url, client_id).await?;
                     keys.save().await?;
                 } else {
                     let host_domain = crate::host_name(host_url);
@@ -68,7 +83,11 @@ impl AuthCommand {
                 };
                 let host = crate::host_name(host_url);
                 if !keys.hosts.contains_key(host) {
-                    let mut login = crate::keys::LoginInfo::Application { token };
+                    let login_url = Self::login_base_url(host_name, host_url);
+                    let mut login = crate::keys::LoginInfo::Application {
+                        token,
+                        base_url: Some(login_url),
+                    };
                     add_ssh_alias(&mut login, host_url, keys).await;
                     keys.hosts.insert(host.to_owned(), login);
                     keys.save().await?;
@@ -262,6 +281,7 @@ async fn oauth_login(
         token: response.access_token,
         refresh_token: response.refresh_token,
         expires_at,
+        base_url: Some(host.clone()),
     };
     add_ssh_alias(&mut login_info, host, keys).await;
     let domain = crate::host_name(host);

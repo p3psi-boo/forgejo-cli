@@ -97,8 +97,11 @@ impl KeyInfo {
     pub async fn get_api(&mut self, url: &Url) -> eyre::Result<Forgejo> {
         match self.get_login(url) {
             Some(login) => {
-                let was_refreshed = login.refresh(url).await?;
-                let api = login.api_for(url).await?;
+                // Prefer the base URL saved at login; host_url may re-derive the wrong
+                // scheme (e.g. a bare --host defaults to https).
+                let api_url = login.base_url().cloned().unwrap_or_else(|| url.clone());
+                let was_refreshed = login.refresh(&api_url).await?;
+                let api = login.api_for(&api_url).await?;
                 if was_refreshed {
                     self.save().await?;
                 }
@@ -130,11 +133,15 @@ impl KeyInfo {
 pub enum LoginInfo {
     Application {
         token: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_url: Option<Url>,
     },
     OAuth {
         token: String,
         refresh_token: String,
         expires_at: time::OffsetDateTime,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_url: Option<Url>,
     },
 }
 
@@ -184,6 +191,52 @@ impl LoginInfo {
                     Forgejo::with_user_agent(Auth::Token(token), url.clone(), crate::USER_AGENT)?;
                 Ok(api)
             }
+        }
+    }
+
+    pub fn base_url(&self) -> Option<&Url> {
+        match self {
+            LoginInfo::Application { base_url, .. } | LoginInfo::OAuth { base_url, .. } => {
+                base_url.as_ref()
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn login_uses_saved_base_url() {
+        // Logins are keyed by host name without scheme, so an https lookup
+        // still finds an http login and recovers its saved base url.
+        let login_url = Url::parse("http://forgejo.localhost:3000/").unwrap();
+        let mut keys = KeyInfo::default();
+        keys.hosts.insert(
+            crate::host_name(&login_url).to_owned(),
+            LoginInfo::Application {
+                token: "t".into(),
+                base_url: Some(login_url),
+            },
+        );
+
+        let login = keys
+            .get_login(&Url::parse("https://forgejo.localhost:3000/").unwrap())
+            .unwrap();
+        assert_eq!(login.base_url().unwrap().scheme(), "http");
+    }
+
+    #[test]
+    fn old_config_loads_without_base_url() {
+        let json = r#"{"type":"Application","token":"t"}"#;
+        let info: LoginInfo = serde_json::from_str(json).unwrap();
+        match info {
+            LoginInfo::Application { token, base_url } => {
+                assert_eq!(token, "t");
+                assert!(base_url.is_none());
+            }
+            _ => unreachable!(),
         }
     }
 }
