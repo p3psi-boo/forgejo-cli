@@ -30,17 +30,17 @@ pub enum TagSubcommand {
         name: String,
 
         #[clap(help = h!("arg-tag-create-body"), long_help = lh!("arg-tag-create-body"))]
-        #[clap(long, short)]
+        #[clap(long)]
         body: Option<Option<String>>,
 
-        #[clap(long, short = 'B')]
+        #[clap(long)]
         branch: Option<String>,
     },
     #[clap(about = h!("cmd-tag-delete"))]
     Delete { name: String },
     #[clap(about = h!("cmd-tag-list"))]
     List {
-        #[clap(long, short, default_value_t = 1)]
+        #[clap(long, default_value_t = 1)]
         page: u32,
     },
     #[clap(about = h!("cmd-tag-view"))]

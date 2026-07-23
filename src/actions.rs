@@ -35,7 +35,7 @@ pub enum ActionsSubcommand {
     #[clap(about = h!("cmd-actions-tasks"))]
     Tasks {
         #[clap(help = h!("arg-actions-tasks-page"))]
-        #[clap(long, short, default_value = "1")]
+        #[clap(long, default_value = "1")]
         page: u32,
     },
 
@@ -60,7 +60,7 @@ pub enum ActionsSubcommand {
         r#ref: String,
 
         #[clap(help = h!("arg-actions-dispatch-inputs"))]
-        #[clap(long, short = 'I', value_parser = parse_dispatch_kvs)]
+        #[clap(long, value_parser = parse_dispatch_kvs)]
         inputs: Vec<(String, String)>,
     },
 }
@@ -70,7 +70,7 @@ pub enum ActionsVariablesSubcommmand {
     #[clap(about = h!("cmd-actions-variables-list"))]
     List {
         #[clap(help = h!("arg-actions-variables-list-verbose"))]
-        #[clap(long, short)]
+        #[clap(long)]
         verbose: bool,
     },
 
@@ -83,7 +83,7 @@ pub enum ActionsVariablesSubcommmand {
         data: Option<String>,
 
         #[clap(help = h!("arg-actions-variables-create-force"))]
-        #[clap(long, short)]
+        #[clap(long)]
         force: bool,
     },
 

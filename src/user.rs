@@ -24,7 +24,7 @@ pub enum UserSubcommand {
     Search {
         #[clap(help = h!("arg-user-search-query"))]
         query: String,
-        #[clap(long, short)]
+        #[clap(long)]
         page: Option<usize>,
     },
     #[clap(about = h!("cmd-user-view"))]
@@ -121,7 +121,7 @@ pub enum EditCommand {
         name: Option<String>,
 
         #[clap(help = h!("arg-user-edit-name-unset"))]
-        #[clap(long, short, group = "arg")]
+        #[clap(long, group = "arg")]
         unset: bool,
     },
     #[clap(about = h!("cmd-user-edit-pronouns"))]
@@ -131,7 +131,7 @@ pub enum EditCommand {
         pronouns: Option<String>,
 
         #[clap(help = h!("arg-user-edit-pronouns-unset"))]
-        #[clap(long, short, group = "arg")]
+        #[clap(long, group = "arg")]
         unset: bool,
     },
     #[clap(about = h!("cmd-user-edit-location"))]
@@ -141,27 +141,27 @@ pub enum EditCommand {
         location: Option<String>,
 
         #[clap(help = h!("arg-user-edit-location-unset"))]
-        #[clap(long, short, group = "arg")]
+        #[clap(long, group = "arg")]
         unset: bool,
     },
     #[clap(about = h!("cmd-user-edit-activity"))]
     Activity {
         #[clap(help = h!("arg-user-edit-activity-visibility"))]
-        #[clap(long, short)]
+        #[clap(long)]
         visibility: VisibilitySetting,
     },
     #[clap(about = h!("cmd-user-edit-email"))]
     Email {
         #[clap(help = h!("arg-user-edit-email-visibility"))]
-        #[clap(long, short)]
+        #[clap(long)]
         visibility: Option<VisibilitySetting>,
 
         #[clap(help = h!("arg-user-edit-email-add"))]
-        #[clap(long, short)]
+        #[clap(long)]
         add: Vec<String>,
 
         #[clap(help = h!("arg-user-edit-email-rm"))]
-        #[clap(long, short)]
+        #[clap(long)]
         rm: Vec<String>,
     },
     #[clap(about = h!("cmd-user-edit-website"))]
@@ -171,7 +171,7 @@ pub enum EditCommand {
         url: Option<String>,
 
         #[clap(help = h!("arg-user-edit-website-unset"))]
-        #[clap(long, short, group = "arg")]
+        #[clap(long, group = "arg")]
         unset: bool,
     },
 }
@@ -181,7 +181,7 @@ pub enum KeyCommand {
     #[clap(about = h!("cmd-user-key-list"))]
     List {
         #[clap(help = h!("arg-user-key-list-verbose"))]
-        #[clap(short, long)]
+        #[clap(long)]
         verbose: bool,
     },
     #[clap(about = h!("cmd-user-key-view"))]
@@ -200,15 +200,15 @@ pub enum KeyCommand {
         keyfile: Option<String>,
 
         #[clap(help = h!("arg-user-key-upload-title"))]
-        #[clap(short, long)]
+        #[clap(long)]
         title: Option<String>,
 
         #[clap(help = h!("arg-user-key-upload-force"))]
-        #[clap(short, long)]
+        #[clap(long)]
         force: bool,
 
         #[clap(help = h!("arg-user-key-upload-read_only"))]
-        #[clap(short, long)]
+        #[clap(long)]
         read_only: bool,
     },
 }
@@ -218,7 +218,7 @@ pub enum GpgCommand {
     #[clap(about = h!("cmd-user-gpg-list"))]
     List {
         #[clap(help = h!("arg-user-gpg-list-verbose"))]
-        #[clap(short, long)]
+        #[clap(long)]
         verbose: bool,
     },
 
@@ -233,7 +233,7 @@ pub enum GpgCommand {
         id: i64,
 
         #[clap(help = h!("arg-user-gpg-delete-force"))]
-        #[clap(short, long)]
+        #[clap(long)]
         force: bool,
     },
     #[clap(about = h!("cmd-user-gpg-upload"))]
@@ -242,7 +242,7 @@ pub enum GpgCommand {
         key: String,
 
         #[clap(help = h!("arg-user-gpg-upload-no_verify"))]
-        #[clap(short, long)]
+        #[clap(long)]
         no_verify: bool,
     },
     #[clap(about = h!("cmd-user-gpg-verify"), long_about = lh!("cmd-user-gpg-verify"))]

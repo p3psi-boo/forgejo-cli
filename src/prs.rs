@@ -36,21 +36,21 @@ pub enum PrSubcommand {
     Search {
         query: Option<String>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         labels: Option<String>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         creator: Option<String>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         assignee: Option<String>,
 
         #[clap(help = h!("arg-pr-search-state"))]
-        #[clap(long, short)]
+        #[clap(long)]
         state: Option<crate::issues::State>,
 
         #[clap(help = h!("arg-pr-search-repo"))]
-        #[clap(long, short)]
+        #[clap(long)]
         repo: Option<RepoArg>,
     },
     #[clap(about = h!("cmd-pr-create"))]
@@ -75,19 +75,19 @@ pub enum PrSubcommand {
         body_file: Option<PathBuf>,
 
         #[clap(help = h!("arg-pr-create-autofill"), long_help = lh!("arg-pr-create-autofill"))]
-        #[clap(short = 'A', long, alias = "fill")]
+        #[clap(long, alias = "fill")]
         autofill: bool,
 
         #[clap(help = h!("arg-pr-create-repo"))]
-        #[clap(long, short)]
+        #[clap(long)]
         repo: Option<RepoArg>,
 
         #[clap(help = h!("arg-pr-create-web"))]
-        #[clap(short, long, group = "web-or-cmd", group = "web-or-agit")]
+        #[clap(long, group = "web-or-cmd", group = "web-or-agit")]
         web: bool,
 
         #[clap(help = h!("arg-pr-create-agit"))]
-        #[clap(short, long, group = "source", group = "web-or-agit")]
+        #[clap(long, group = "source", group = "web-or-agit")]
         agit: bool,
     },
     #[clap(about = h!("cmd-pr-view"))]
@@ -116,11 +116,11 @@ pub enum PrSubcommand {
         branch_name: Option<String>,
 
         #[clap(help = h!("arg-pr-checkout-ssh"))]
-        #[clap(long, short = 'S')]
+        #[clap(long)]
         ssh: Option<Option<bool>>,
 
         #[clap(help = h!("arg-pr-checkout-identity_file"))]
-        #[clap(long, short = 'I')]
+        #[clap(long)]
         identity_file: Option<PathBuf>,
     },
     #[clap(about = h!("cmd-pr-comment"))]
@@ -137,14 +137,14 @@ pub enum PrSubcommand {
     },
     #[clap(about = h!("cmd-pr-assign"))]
     Assign {
-        #[clap(long, short)]
+        #[clap(long)]
         pr: Option<IssueId>,
         #[clap(help = h!("arg-pr-assign-users"))]
         users: Vec<String>,
     },
     #[clap(about = h!("cmd-pr-unassign"))]
     Unassign {
-        #[clap(long, short)]
+        #[clap(long)]
         pr: Option<IssueId>,
         #[clap(help = h!("arg-pr-unassign-users"))]
         users: Vec<String>,
@@ -161,7 +161,7 @@ pub enum PrSubcommand {
         #[clap(help = h!("arg-pr-close-pr"))]
         pr: Option<IssueId>,
         #[clap(help = h!("arg-pr-close-with_msg"), long_help = lh!("arg-pr-close-with_msg"))]
-        #[clap(long, short)]
+        #[clap(long)]
         with_msg: Option<Option<String>>,
     },
     #[clap(about = h!("cmd-pr-merge"))]
@@ -170,19 +170,19 @@ pub enum PrSubcommand {
         pr: Option<IssueId>,
 
         #[clap(help = h!("arg-pr-merge-method"))]
-        #[clap(long, short = 'M')]
+        #[clap(long)]
         method: Option<MergeMethod>,
 
         #[clap(help = h!("arg-pr-merge-delete"))]
-        #[clap(long, short)]
+        #[clap(long)]
         delete: bool,
 
         #[clap(help = h!("arg-pr-merge-title"))]
-        #[clap(long, short)]
+        #[clap(long)]
         title: Option<String>,
 
         #[clap(help = h!("arg-pr-merge-message"))]
-        #[clap(long, short)]
+        #[clap(long)]
         message: Option<Option<String>>,
     },
     #[clap(about = h!("cmd-pr-browse"))]
@@ -271,11 +271,11 @@ pub enum EditCommand {
     #[clap(about = h!("cmd-pr-edit-labels"))]
     Labels {
         #[clap(help = h!("arg-pr-edit-labels-add"))]
-        #[clap(long, short)]
+        #[clap(long)]
         add: Vec<String>,
 
         #[clap(help = h!("arg-pr-edit-labels-rm"))]
-        #[clap(long, short)]
+        #[clap(long)]
         rm: Vec<String>,
     },
 }
@@ -298,10 +298,10 @@ pub enum ViewCommand {
     #[clap(about = h!("cmd-pr-view-diff"))]
     Diff {
         #[clap(help = h!("arg-pr-view-diff-patch"))]
-        #[clap(long, short)]
+        #[clap(long)]
         patch: bool,
         #[clap(help = h!("arg-pr-view-diff-editor"))]
-        #[clap(long, short)]
+        #[clap(long)]
         editor: bool,
     },
     #[clap(about = h!("cmd-pr-view-files"))]
@@ -309,7 +309,7 @@ pub enum ViewCommand {
     #[clap(about = h!("cmd-pr-view-commits"))]
     Commits {
         #[clap(help = h!("arg-pr-view-commits-oneline"))]
-        #[clap(long, short)]
+        #[clap(long)]
         oneline: bool,
     },
 }
@@ -319,10 +319,10 @@ pub enum ReviewCommand {
     #[clap(about = h!("cmd-pr-review-list"))]
     List {
         #[clap(help = h!("arg-pr-review-list-comments"))]
-        #[clap(long, short)]
+        #[clap(long)]
         comments: bool,
         #[clap(help = h!("arg-pr-review-list-all"))]
-        #[clap(long, short)]
+        #[clap(long)]
         all: bool,
     },
 }

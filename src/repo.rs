@@ -332,19 +332,19 @@ pub struct RepoCreateArgs {
     #[clap(long, short)]
     pub description: Option<String>,
 
-    #[clap(long, short = 'P')]
+    #[clap(long)]
     pub private: bool,
 
     #[clap(help = h!("arg-repo-create-remote"))]
-    #[clap(long, short)]
+    #[clap(long)]
     pub remote: Option<String>,
 
     #[clap(help = h!("arg-repo-create-push"), long_help = lh!("arg-repo-create-push"))]
-    #[clap(long, short)]
+    #[clap(long)]
     pub push: bool,
 
     #[clap(help = h!("arg-repo-create-ssh"))]
-    #[clap(long, short = 'S')]
+    #[clap(long)]
     pub ssh: Option<Option<bool>>,
 }
 
@@ -360,7 +360,7 @@ pub enum RepoCommand {
         repo: RepoArg,
         #[clap(long)]
         name: Option<String>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
     #[clap(about = h!("cmd-repo-migrate"))]
@@ -373,43 +373,43 @@ pub enum RepoCommand {
         name: String,
 
         #[clap(help = h!("arg-repo-migrate-mirror"))]
-        #[clap(long, short)]
+        #[clap(long)]
         mirror: bool,
 
         #[clap(help = h!("arg-repo-migrate-private"))]
-        #[clap(long, short)]
+        #[clap(long)]
         private: bool,
 
         #[clap(help = h!("arg-repo-migrate-include"), long_help = lh!("arg-repo-migrate-include"))]
-        #[clap(long, short)]
+        #[clap(long)]
         include: Option<MigrateInclude>,
 
         #[clap(help = h!("arg-repo-migrate-lfs_endpoint"))]
-        #[clap(long, short = 'L')]
+        #[clap(long)]
         lfs_endpoint: Option<url::Url>,
 
         #[clap(help = h!("arg-repo-migrate-service"))]
-        #[clap(long, short)]
+        #[clap(long)]
         service: Option<MigrateService>,
 
         #[clap(help = h!("arg-repo-migrate-token"), long_help = lh!("arg-repo-migrate-token"))]
-        #[clap(long, short)]
+        #[clap(long)]
         token: bool,
 
         #[clap(help = h!("arg-repo-migrate-login"), long_help = lh!("arg-repo-migrate-login"))]
-        #[clap(long, short)]
+        #[clap(long)]
         login: bool,
     },
     #[clap(about = h!("cmd-repo-view"))]
     View {
         name: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
     #[clap(about = h!("cmd-repo-readme"))]
     Readme {
         name: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
     #[clap(about = h!("cmd-repo-clone"))]
@@ -419,29 +419,29 @@ pub enum RepoCommand {
         path: Option<PathBuf>,
 
         #[clap(help = h!("arg-repo-clone-ssh"))]
-        #[clap(long, short = 'S')]
+        #[clap(long)]
         ssh: Option<Option<bool>>,
 
         #[clap(help = h!("arg-repo-clone-identity_file"))]
-        #[clap(long, short = 'I')]
+        #[clap(long)]
         identity_file: Option<PathBuf>,
     },
     #[clap(about = h!("cmd-repo-star"))]
     Star {
         repo: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
     #[clap(about = h!("cmd-repo-unstar"))]
     Unstar {
         repo: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
     #[clap(about = h!("cmd-repo-star_status"))]
     StarStatus {
         repo: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
         #[clap(help = h!("arg-repo-star_status-list"))]
         #[clap(long, conflicts_with("repo"))]
@@ -450,19 +450,19 @@ pub enum RepoCommand {
     #[clap(about = h!("cmd-repo-watch"))]
     Watch {
         repo: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
     #[clap(about = h!("cmd-repo-unwatch"))]
     Unwatch {
         repo: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
     #[clap(about = h!("cmd-repo-watch_status"))]
     WatchStatus {
         repo: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
         #[clap(help = h!("arg-repo-watch_status-list"))]
         #[clap(long, conflicts_with("repo"))]
@@ -473,7 +473,7 @@ pub enum RepoCommand {
     #[clap(about = h!("cmd-repo-browse"))]
     Browse {
         name: Option<RepoArg>,
-        #[clap(long, short = 'R')]
+        #[clap(long)]
         remote: Option<String>,
     },
 
@@ -491,7 +491,7 @@ pub enum RepoCommand {
         repo: Option<RepoArg>,
 
         #[clap(help = h!("arg-repo-edit-archived"))]
-        #[clap(short, long)]
+        #[clap(long)]
         archived: Option<bool>,
 
         #[clap(help = h!("arg-repo-edit-default_branch"))]
@@ -499,7 +499,7 @@ pub enum RepoCommand {
         default_branch: Option<String>,
 
         #[clap(help = h!("arg-repo-edit-description"))]
-        #[clap(short, long)]
+        #[clap(long)]
         description: Option<String>,
 
         #[clap(help = h!("arg-repo-edit-enable_prune"))]
@@ -515,23 +515,23 @@ pub enum RepoCommand {
         name: Option<String>,
 
         #[clap(help = h!("arg-repo-edit-private"))]
-        #[clap(short, long)]
+        #[clap(long)]
         private: Option<bool>,
 
         #[clap(help = h!("arg-repo-edit-template"))]
-        #[clap(short, long)]
+        #[clap(long)]
         template: Option<bool>,
 
         #[clap(help = h!("arg-repo-edit-website"))]
-        #[clap(short, long)]
+        #[clap(long)]
         website: Option<String>,
 
         #[clap(help = h!("arg-repo-edit-avatar"))]
-        #[clap(short = 'A', long)]
+        #[clap(long)]
         avatar: Option<PathBuf>,
 
         #[clap(help = h!("arg-repo-edit-unset_avatar"))]
-        #[clap(short, long, conflicts_with = "avatar")]
+        #[clap(long, conflicts_with = "avatar")]
         unset_avatar: bool,
     },
 
@@ -1065,7 +1065,7 @@ pub enum LabelsSubcommand {
     #[clap(about = h!("cmd-repo-labels-view"))]
     View {
         #[clap(help = h!("arg-repo-labels-view-archived"))]
-        #[clap(short, long)]
+        #[clap(long)]
         archived: bool,
     },
 
@@ -1078,15 +1078,15 @@ pub enum LabelsSubcommand {
         color: String,
 
         #[clap(help = h!("arg-repo-labels-create-description"))]
-        #[clap(long, short)]
+        #[clap(long)]
         description: Option<Option<String>>,
 
         #[clap(help = h!("arg-repo-labels-create-exclusive"))]
-        #[clap(long, short)]
+        #[clap(long)]
         exclusive: bool,
 
         #[clap(help = h!("arg-repo-labels-create-archived"))]
-        #[clap(long, short)]
+        #[clap(long)]
         archived: bool,
     },
 
@@ -1102,23 +1102,23 @@ pub enum LabelsSubcommand {
         id: String,
 
         #[clap(help = h!("arg-repo-labels-edit-name"))]
-        #[clap(short, long)]
+        #[clap(long)]
         name: Option<String>,
 
         #[clap(help = h!("arg-repo-labels-edit-color"))]
-        #[clap(short, long)]
+        #[clap(long)]
         color: Option<String>,
 
         #[clap(help = h!("arg-repo-labels-edit-description"))]
-        #[clap(short, long)]
+        #[clap(long)]
         description: Option<Option<String>>,
 
         #[clap(help = h!("arg-repo-labels-edit-exclusive"))]
-        #[clap(short, long)]
+        #[clap(long)]
         exclusive: Option<bool>,
 
         #[clap(help = h!("arg-repo-labels-edit-archived"))]
-        #[clap(short, long)]
+        #[clap(long)]
         archived: Option<bool>,
     },
 }
@@ -1129,7 +1129,7 @@ pub enum UnitsSubcommand {
     #[clap(alias = "issue")]
     Issues {
         #[clap(help = h!("arg-repo-units-issues-enable"))]
-        #[clap(short, long)]
+        #[clap(long)]
         enable: Option<bool>,
         // TODO: external_tracker, internal_tracker
         // These accept quite sophisticated data structures, not sure how to model those.
@@ -1139,7 +1139,7 @@ pub enum UnitsSubcommand {
     #[clap(alias = "pr")]
     Prs {
         #[clap(help = h!("arg-repo-units-prs-enable"))]
-        #[clap(short, long)]
+        #[clap(long)]
         enable: Option<bool>,
 
         #[clap(help = h!("arg-repo-units-prs-allow_fast_forward_only_merge"))]
@@ -1198,14 +1198,14 @@ pub enum UnitsSubcommand {
     #[clap(about = h!("cmd-repo-units-actions"))]
     Actions {
         #[clap(help = h!("arg-repo-units-actions-enable"))]
-        #[clap(short, long)]
+        #[clap(long)]
         enable: Option<bool>,
     },
 
     #[clap(about = h!("cmd-repo-units-wiki"))]
     Wiki {
         #[clap(help = h!("arg-repo-units-wiki-enable"))]
-        #[clap(short, long)]
+        #[clap(long)]
         enable: Option<bool>,
 
         #[clap(help = h!("arg-repo-units-wiki-branch"))]
@@ -1225,7 +1225,7 @@ pub enum UnitsSubcommand {
     #[clap(alias = "package")]
     Packages {
         #[clap(help = h!("arg-repo-units-packages-enable"))]
-        #[clap(short, long)]
+        #[clap(long)]
         enable: Option<bool>,
     },
 
@@ -1233,7 +1233,7 @@ pub enum UnitsSubcommand {
     #[clap(alias = "project")]
     Projects {
         #[clap(help = h!("arg-repo-units-projects-enable"))]
-        #[clap(short, long)]
+        #[clap(long)]
         enable: Option<bool>,
     },
 
@@ -1241,7 +1241,7 @@ pub enum UnitsSubcommand {
     #[clap(alias = "release")]
     Releases {
         #[clap(help = h!("arg-repo-units-releases-enable"))]
-        #[clap(short, long)]
+        #[clap(long)]
         enable: Option<bool>,
     },
 }

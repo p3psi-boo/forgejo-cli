@@ -48,7 +48,7 @@ pub enum IssueSubcommand {
         no_template: bool,
 
         #[clap(help = h!("arg-issue-create-repo"))]
-        #[clap(long, short)]
+        #[clap(long)]
         repo: Option<RepoArg>,
 
         #[clap(help = h!("arg-issue-create-web"))]
@@ -92,28 +92,28 @@ pub enum IssueSubcommand {
         #[clap(help = h!("arg-issue-close-issue"))]
         issue: IssueId,
         #[clap(help = h!("arg-issue-close-with_msg"))]
-        #[clap(long, short)]
+        #[clap(long)]
         with_msg: Option<Option<String>>,
     },
     #[clap(about = h!("cmd-issue-search"))]
     Search {
         #[clap(help = h!("arg-issue-search-repo"))]
-        #[clap(long, short)]
+        #[clap(long)]
         repo: Option<RepoArg>,
 
         query: Option<String>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         labels: Option<String>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         creator: Option<String>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         assignee: Option<String>,
 
         #[clap(help = h!("arg-issue-search-state"))]
-        #[clap(long, short)]
+        #[clap(long)]
         state: Option<State>,
     },
     #[clap(about = h!("cmd-issue-view"))]
@@ -126,7 +126,7 @@ pub enum IssueSubcommand {
     #[clap(about = h!("cmd-issue-templates"))]
     Templates {
         #[clap(help = h!("arg-issue-templates-repo"))]
-        #[clap(long, short)]
+        #[clap(long)]
         repo: Option<RepoArg>,
     },
     #[clap(about = h!("cmd-issue-browse"))]
@@ -214,11 +214,11 @@ pub enum EditCommand {
     #[clap(about = h!("cmd-issue-edit-labels"))]
     Labels {
         #[clap(help = h!("arg-issue-edit-labels-add"))]
-        #[clap(long, short)]
+        #[clap(long)]
         add: Vec<String>,
 
         #[clap(help = h!("arg-issue-edit-labels-rm"))]
-        #[clap(long, short)]
+        #[clap(long)]
         rm: Vec<String>,
     },
 }

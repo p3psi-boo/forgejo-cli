@@ -31,68 +31,68 @@ pub enum ReleaseSubcommand {
     Create {
         name: String,
         #[clap(help = h!("arg-release-create-create_tag"))]
-        #[clap(long, short = 'T')]
+        #[clap(long)]
         create_tag: Option<Option<String>>,
 
         #[clap(help = h!("arg-release-create-tag"), long_help = lh!("arg-release-create-tag"))]
-        #[clap(long, short = 't')]
+        #[clap(long)]
         tag: Option<String>,
 
         #[clap(help = h!("arg-release-create-attach"), long_help = lh!("arg-release-create-attach"))]
-        #[clap(long, short)]
+        #[clap(long)]
         attach: Vec<String>,
 
         #[clap(help = h!("arg-release-create-body"), long_help = lh!("arg-release-create-body"))]
-        #[clap(long, short)]
+        #[clap(long)]
         body: Option<Option<String>>,
 
-        #[clap(long, short = 'B')]
+        #[clap(long)]
         branch: Option<String>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         draft: bool,
 
-        #[clap(long, short)]
+        #[clap(long)]
         prerelease: bool,
     },
     #[clap(about = h!("cmd-release-edit"))]
     Edit {
         name: String,
 
-        #[clap(long, short = 'n')]
+        #[clap(long)]
         rename: Option<String>,
 
         #[clap(help = h!("arg-release-edit-tag"))]
-        #[clap(long, short = 't')]
+        #[clap(long)]
         tag: Option<String>,
 
         #[clap(help = h!("arg-release-edit-body"), long_help = lh!("arg-release-edit-body"))]
-        #[clap(long, short)]
+        #[clap(long)]
         body: Option<Option<String>>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         draft: Option<bool>,
 
-        #[clap(long, short)]
+        #[clap(long)]
         prerelease: Option<bool>,
     },
     #[clap(about = h!("cmd-release-delete"))]
     Delete {
         name: String,
-        #[clap(long, short = 't')]
+        #[clap(long)]
         by_tag: bool,
     },
     #[clap(about = h!("cmd-release-list"))]
     List {
-        #[clap(long, short = 'p')]
+        #[clap(long)]
         include_prerelease: bool,
-        #[clap(long, short = 'd')]
+        #[clap(long)]
         include_draft: bool,
     },
     #[clap(about = h!("cmd-release-view"))]
     View {
         name: String,
-        #[clap(long, short = 't')]
+        #[clap(long)]
         by_tag: bool,
     },
     #[clap(about = h!("cmd-release-browse"))]
@@ -116,7 +116,7 @@ pub enum AssetCommand {
     Download {
         release: String,
         asset: String,
-        #[clap(long, short)]
+        #[clap(long)]
         output: Option<std::path::PathBuf>,
     },
 }

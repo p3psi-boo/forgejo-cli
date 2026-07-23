@@ -31,15 +31,15 @@ pub enum WikiSubcommand {
         page: String,
     },
     Clone {
-        #[clap(long, short)]
+        #[clap(long)]
         path: Option<PathBuf>,
 
         #[clap(help = h!("arg-wiki-clone-ssh"))]
-        #[clap(long, short = 'S')]
+        #[clap(long)]
         ssh: Option<Option<bool>>,
 
         #[clap(help = h!("arg-wiki-clone-identity_file"))]
-        #[clap(long, short = 'I')]
+        #[clap(long)]
         identity_file: Option<PathBuf>,
     },
     Browse {

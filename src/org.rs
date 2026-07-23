@@ -26,11 +26,11 @@ pub enum OrgSubcommand {
     #[clap(about = h!("cmd-org-list"))]
     List {
         #[clap(help = h!("arg-org-list-page"))]
-        #[clap(long, short, default_value_t = 1)]
+        #[clap(long, default_value_t = 1)]
         page: u32,
 
         #[clap(help = h!("arg-org-list-only_member_of"))]
-        #[clap(long, short, conflicts_with = "page")]
+        #[clap(long, conflicts_with = "page")]
         only_member_of: bool,
     },
     #[clap(about = h!("cmd-org-view"))]
@@ -65,7 +65,7 @@ pub enum OrgSubcommand {
         org: String,
 
         #[clap(help = h!("arg-org-members-page"))]
-        #[clap(long, short, default_value_t = 1)]
+        #[clap(long, default_value_t = 1)]
         page: u32,
     },
     #[clap(about = h!("cmd-org-visibility"))]
@@ -74,7 +74,7 @@ pub enum OrgSubcommand {
         org: String,
 
         #[clap(help = h!("arg-org-visibility-set"))]
-        #[clap(long, short)]
+        #[clap(long)]
         set: Option<OrgMemberVisibility>,
     },
     #[clap(subcommand)]
@@ -88,31 +88,31 @@ pub enum OrgSubcommand {
 #[derive(Args, Clone, Debug)]
 pub struct OrgOptions {
     #[clap(help = h!("arg-org-options-full_name"), long_help = lh!("arg-org-options-full_name"))]
-    #[clap(long, short)]
+    #[clap(long)]
     full_name: Option<String>,
 
     #[clap(help = h!("arg-org-options-description"))]
-    #[clap(long, short)]
+    #[clap(long)]
     description: Option<String>,
 
     #[clap(help = h!("arg-org-options-email"))]
-    #[clap(long, short)]
+    #[clap(long)]
     email: Option<String>,
 
     #[clap(help = h!("arg-org-options-location"))]
-    #[clap(long, short)]
+    #[clap(long)]
     location: Option<String>,
 
     #[clap(help = h!("arg-org-options-website"))]
-    #[clap(long, short)]
+    #[clap(long)]
     website: Option<String>,
 
     #[clap(help = h!("arg-org-options-visibility"), long_help = lh!("arg-org-options-visibility"))]
-    #[clap(long, short)]
+    #[clap(long)]
     visibility: Option<OrgVisibility>,
 
     #[clap(help = h!("arg-org-options-admin_can_change_team_access"))]
-    #[clap(long, short)]
+    #[clap(long)]
     admin_can_change_team_access: Option<bool>,
 }
 
@@ -451,11 +451,11 @@ pub enum LabelSubcommand {
         color: String,
 
         #[clap(help = h!("arg-org-label-add-description"))]
-        #[clap(long, short)]
+        #[clap(long)]
         description: Option<String>,
 
         #[clap(help = h!("arg-org-label-add-exclusive"))]
-        #[clap(long, short)]
+        #[clap(long)]
         exclusive: bool,
     },
     #[clap(about = h!("cmd-org-label-edit"))]
@@ -467,23 +467,23 @@ pub enum LabelSubcommand {
         name: String,
 
         #[clap(help = h!("arg-org-label-edit-new_name"))]
-        #[clap(long, short)]
+        #[clap(long)]
         new_name: Option<String>,
 
         #[clap(help = h!("arg-org-label-edit-color"))]
-        #[clap(long, short)]
+        #[clap(long)]
         color: Option<String>,
 
         #[clap(help = h!("arg-org-label-edit-description"))]
-        #[clap(long, short)]
+        #[clap(long)]
         description: Option<String>,
 
         #[clap(help = h!("arg-org-label-edit-exclusive"))]
-        #[clap(long, short)]
+        #[clap(long)]
         exclusive: bool,
 
         #[clap(help = h!("arg-org-label-edit-archived"))]
-        #[clap(long, short)]
+        #[clap(long)]
         archived: Option<bool>,
     },
     #[clap(about = h!("cmd-org-label-rm"))]
@@ -648,7 +648,7 @@ pub enum RepoSubcommand {
         org: String,
 
         #[clap(help = h!("arg-org-repo-list-page"))]
-        #[clap(long, short, default_value_t = 1)]
+        #[clap(long, default_value_t = 1)]
         page: u32,
     },
     #[clap(about = h!("cmd-org-repo-create"))]
