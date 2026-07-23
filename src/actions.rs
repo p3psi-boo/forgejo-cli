@@ -70,7 +70,7 @@ pub enum ActionsVariablesSubcommmand {
     #[clap(about = h!("cmd-actions-variables-list"))]
     List {
         #[clap(help = h!("arg-actions-variables-list-verbose"))]
-        #[clap(long)]
+        #[clap(short, long)]
         verbose: bool,
     },
 
