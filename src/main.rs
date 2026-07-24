@@ -90,7 +90,7 @@ impl Command {
             Command::User(subcommand) => subcommand.run(keys, host_name).await?,
             Command::Org(subcommand) => subcommand.run(keys, host_name).await?,
             Command::Version(command) => command.run().await?,
-            Command::Completion(subcommand) => subcommand.run(),
+            Command::Completion(subcommand) => subcommand.run()?,
         }
         Ok(())
     }

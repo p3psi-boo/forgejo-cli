@@ -1,7 +1,8 @@
 use std::io::Write;
 
 use clap::{ArgAction, Args, CommandFactory, ValueEnum};
-use eyre::OptionExt;
+use clap_complete::Generator;
+use eyre::{Context, OptionExt};
 
 #[derive(Args, Clone, Debug)]
 pub struct CompletionCommand {
@@ -22,22 +23,23 @@ pub enum Shell {
 }
 
 impl CompletionCommand {
-    pub fn run(self) {
+    pub fn run(self) -> eyre::Result<()> {
         use Shell::*;
         use clap_complete::Shell as CCShell;
         let mut cmd = crate::App::command();
         let app_name = self.bin_name.as_deref().unwrap_or("fj");
+        cmd.set_bin_name(app_name);
+        cmd.build();
         let mut writer = std::io::stdout();
-        match self.shell {
-            Bash => clap_complete::generate(CCShell::Bash, &mut cmd, app_name, &mut writer),
-            Elvish => clap_complete::generate(CCShell::Elvish, &mut cmd, app_name, &mut writer),
-            Fish => clap_complete::generate(CCShell::Fish, &mut cmd, app_name, &mut writer),
-            PowerShell => {
-                clap_complete::generate(CCShell::PowerShell, &mut cmd, app_name, &mut writer)
-            }
-            Zsh => clap_complete::generate(CCShell::Zsh, &mut cmd, app_name, &mut writer),
-            Nushell => clap_complete::generate(NushellCompletion, &mut cmd, app_name, &mut writer),
-        }
+        let res = match self.shell {
+            Bash => CCShell::Bash.try_generate(&cmd, &mut writer),
+            Elvish => CCShell::Elvish.try_generate(&cmd, &mut writer),
+            Fish => CCShell::Fish.try_generate(&cmd, &mut writer),
+            PowerShell => CCShell::PowerShell.try_generate(&cmd, &mut writer),
+            Zsh => CCShell::Zsh.try_generate(&cmd, &mut writer),
+            Nushell => NushellCompletion.try_generate(&cmd, &mut writer),
+        };
+        res.wrap_err("IO error during completion generation: {}")
     }
 }
 
