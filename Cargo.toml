@@ -22,8 +22,9 @@ name = "fj"
 path = "src/main.rs"
 
 [features]
-default = ["locale.de-DE", "locale.zh-Hans"]
+default = ["rustls-tls", "default-locale"]
 update-check = ["dep:semver"]
+default-locale = ["locale.de-DE", "locale.zh-Hans"]
 "locale.de-DE" = []
 "locale.fi" = []
 "locale.fr" = []
@@ -32,6 +33,9 @@ update-check = ["dep:semver"]
 "locale.ru" = []
 "locale.tok" = []
 "locale.zh-Hans" = []
+
+rustls-tls = ["forgejo-api/rustls-tls"]
+native-tls = ["forgejo-api/native-tls"]
 
 [dependencies]
 auth-git2 = "0.6.0"
@@ -44,7 +48,7 @@ eyre = "0.6.12"
 fluent-bundle = "0.16.0"
 fluent-datetime = "0.2.0"
 fluent-syntax = "0.12.0"
-forgejo-api = "0.11.0"
+forgejo-api = { version = "0.11.0", default-features = false }
 futures = "0.3.31"
 git2 = { version = "0.21.0", features = ["https", "ssh"] }
 hyper = "1.6.0"
