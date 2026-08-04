@@ -439,6 +439,7 @@ msg-view-assignees-empty = No one is assigned.
 help-cmd-issue-search = Search for an issue in a repo
 help-arg-issue-search-repo = The repo to search in
 help-arg-issue-search-state = Filter issues by state. Default: open
+help-arg-issue-search-unassigned = Only show issues that have no assignees
 msg-issue-search-total = { $issues ->
         [one] 1 issue
        *[other] {$issues} issues
@@ -768,6 +769,7 @@ help-arg-pr-browse-id = The pull request to open in your browser
 
 help-cmd-pr-search = Search a repository's pull requests
 help-arg-pr-search-state = Filter PRs by state. Default: open
+help-arg-pr-search-unassigned = Only show pull requests that have no assignees
 help-arg-pr-search-repo = The repo to search in
 msg-pr-search-count = {$pull_requests ->
         [one] 1 pull request

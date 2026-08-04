@@ -45,6 +45,10 @@ pub enum PrSubcommand {
         #[clap(long, short)]
         assignee: Option<String>,
 
+        #[clap(help = h!("arg-pr-search-unassigned"), long = "unassigned")]
+        #[clap(conflicts_with = "assignee")]
+        unassigned: bool,
+
         #[clap(help = h!("arg-pr-search-state"))]
         #[clap(long, short)]
         state: Option<crate::issues::State>,
@@ -411,9 +415,15 @@ impl PrCommand {
                 labels,
                 creator,
                 assignee,
+                unassigned,
                 state,
                 repo: _,
-            } => view_prs(repo, &api, query, labels, creator, assignee, state).await?,
+            } => {
+                view_prs(
+                    repo, &api, query, labels, creator, assignee, unassigned, state,
+                )
+                .await?
+            }
             Assign { pr, users } => {
                 let (repo, pr) = try_get_pr_number(repo, &api, pr.map(|pr| pr.number)).await?;
                 crate::issues::assign_to_issue(&repo, &api, pr, users).await?
@@ -1572,6 +1582,7 @@ async fn checkout_pr(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn view_prs(
     repo: &RepoName,
     api: &Forgejo,
@@ -1579,6 +1590,7 @@ async fn view_prs(
     labels: Option<String>,
     creator: Option<String>,
     assignee: Option<String>,
+    unassigned: bool,
     state: Option<crate::issues::State>,
 ) -> eyre::Result<()> {
     let labels = labels
@@ -1597,9 +1609,12 @@ async fn view_prs(
         mentioned_by: None,
         sort: None,
     };
-    let (_, prs) = api
+    let (_, mut prs) = api
         .issue_list_issues(repo.owner(), repo.name(), query)
         .await?;
+    if unassigned {
+        prs.retain(|i| i.assignees.as_ref().is_none_or(Vec::is_empty));
+    }
     ftl_println!("msg-pr-search-count", pull_requests = prs.len());
     for pr in prs {
         let number = pr

@@ -112,6 +112,10 @@ pub enum IssueSubcommand {
         #[clap(long, short)]
         assignee: Option<String>,
 
+        #[clap(help = h!("arg-issue-search-unassigned"), long = "unassigned")]
+        #[clap(conflicts_with = "assignee")]
+        unassigned: bool,
+
         #[clap(help = h!("arg-issue-search-state"))]
         #[clap(long, short)]
         state: Option<State>,
@@ -275,8 +279,14 @@ impl IssueCommand {
                 labels,
                 creator,
                 assignee,
+                unassigned,
                 state,
-            } => view_issues(repo, &api, query, labels, creator, assignee, state).await?,
+            } => {
+                view_issues(
+                    repo, &api, query, labels, creator, assignee, unassigned, state,
+                )
+                .await?
+            }
             Templates { .. } => view_issue_templates(repo, &api).await?,
             Edit { issue, command } => match command {
                 EditCommand::Title { new_title } => {
@@ -546,6 +556,8 @@ pub async fn view_issue(repo: &RepoName, api: &Forgejo, number: i64) -> eyre::Re
     ftl_println!("msg-issue-view-comment_count", comments);
     Ok(())
 }
+
+#[allow(clippy::too_many_arguments)]
 async fn view_issues(
     repo: &RepoName,
     api: &Forgejo,
@@ -553,6 +565,7 @@ async fn view_issues(
     labels: Option<String>,
     creator: Option<String>,
     assignee: Option<String>,
+    unassigned: bool,
     state: Option<State>,
 ) -> eyre::Result<()> {
     let labels = labels
@@ -571,10 +584,13 @@ async fn view_issues(
         mentioned_by: None,
         sort: None,
     };
-    let issues = api
+    let mut issues = api
         .issue_list_issues(repo.owner(), repo.name(), query)
         .all()
         .await?;
+    if unassigned {
+        issues.retain(|i| i.assignees.as_ref().is_none_or(Vec::is_empty));
+    }
     ftl_println!("msg-issue-search-total", issues = issues.len());
     for issue in issues {
         let number = issue
