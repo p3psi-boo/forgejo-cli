@@ -585,6 +585,7 @@ pub async fn view_issue(repo: &RepoName, api: &Forgejo, number: i64) -> eyre::Re
     // if it's a pull request, display it as one instead
     if issue.pull_request.is_some() {
         crate::prs::view_pr(repo, api, Some(number)).await?;
+        ftl_println!("msg-issue-view-pr-as-issue");
         return Ok(());
     }
 
