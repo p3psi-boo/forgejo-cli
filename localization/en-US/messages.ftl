@@ -574,7 +574,7 @@ msg-issue-block-remove-success =
        *[other] Removed {$count} blocking relationships from #{$issue}
     }
 msg-issue-dep-target-required = at least one target issue is required
-msg-issue-depend-no_repo_info = can't figure what repo to access, try specifying it via `{{owner}}/{{repo}}#{{number}}` on the issue or target arguments
+msg-issue-depend-no_repo_info = can't figure what repo to access, try specifying it via `{ "{" }owner{ "}" }/{ "{" }repo{ "}" }#{ "{" }number{ "}" }` on the issue or target arguments
 msg-pr-depend-no_repo_info = can't figure what repo to access, try specifying with `--repo`
 msg-issue-depend-list-empty = No dependencies.
 msg-issue-block-list-empty = No blockers.

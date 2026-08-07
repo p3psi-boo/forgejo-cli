@@ -616,7 +616,16 @@ impl PrCommand {
         match &self.command {
             Search { repo, .. } | Create { repo, .. } => repo.as_ref(),
             Checkout { .. } => None,
-            Depend(_) | Block(_) => None,
+            Depend(cmd) => match &cmd.command {
+                PrDependSubcommand::Add { pr, .. }
+                | PrDependSubcommand::Remove { pr, .. }
+                | PrDependSubcommand::List { pr } => pr.as_ref().and_then(|x| x.repo.as_ref()),
+            },
+            Block(cmd) => match &cmd.command {
+                PrBlockSubcommand::Add { pr, .. }
+                | PrBlockSubcommand::Remove { pr, .. }
+                | PrBlockSubcommand::List { pr } => pr.as_ref().and_then(|x| x.repo.as_ref()),
+            },
             View { id: pr, .. }
             | Status { id: pr, .. }
             | Comment { pr, .. }

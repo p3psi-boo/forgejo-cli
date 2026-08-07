@@ -401,7 +401,16 @@ impl IssueCommand {
             | Close { issue, .. }
             | Comment { issue, .. }
             | Browse { id: issue, .. } => issue.repo.as_ref(),
-            Depend(_) | Block(_) => None,
+            Depend(cmd) => match &cmd.command {
+                IssueDependSubcommand::Add { issue, .. }
+                | IssueDependSubcommand::Remove { issue, .. }
+                | IssueDependSubcommand::List { issue } => issue.repo.as_ref(),
+            },
+            Block(cmd) => match &cmd.command {
+                IssueBlockSubcommand::Add { issue, .. }
+                | IssueBlockSubcommand::Remove { issue, .. }
+                | IssueBlockSubcommand::List { issue } => issue.repo.as_ref(),
+            },
         }
     }
 
