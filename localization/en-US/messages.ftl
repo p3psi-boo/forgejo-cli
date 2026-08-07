@@ -1116,6 +1116,7 @@ msg-user-view-header = {STYLE("bright-cyan", "bold")}{$username}{STYLE("reset")}
         }
     }
 msg-user-view-joined_on = Joined on {STYLE("bold")}{DATETIME($joined, dateStyle: "medium")}{STYLE("reset")}
+msg-user-view-org-as-user = This account is an organization
 
 help-cmd-user-browse = Open a user's profile page in your browser
 help-arg-user-browse-user = The name of the user to open in your browser

@@ -409,6 +409,10 @@ async fn view_user(api: &Forgejo, user: Option<&str>) -> eyre::Result<()> {
         .ok_or_eyre("user does not have join date")?;
     ftl_println!("msg-user-view-joined_on", joined = joined.ftl());
 
+    if api.org_get(username).await.is_ok() {
+        ftl_println!("msg-user-view-org-as-user")
+    }
+
     Ok(())
 }
 
