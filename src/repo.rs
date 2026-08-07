@@ -1900,11 +1900,32 @@ async fn cmd_clone_repo(
         .ok_or_eyre("repo does not have full name")?;
 
     let path = path.unwrap_or_else(|| PathBuf::from(format!("./{repo_name}")));
+    // We don't want to cleanup an already existing directory
+    // Note, that libgit2 checks for us whether the directory is not empty
+    // so we only need to care about whether it already exists
+    let is_new_dir = !tokio::fs::try_exists(&path).await?;
 
     let local_repo = clone_repo(clone_url, &path, identity_file.as_deref())?;
+    let cleanup_repo = async |e: eyre::Report| {
+        if is_new_dir && tokio::fs::remove_dir_all(&path).await.is_err() {
+            // This should never happen, but technically it can. For example, in case of a race
+            // condition where another process deletes this directory or changes its permissions
+            // underneath us
+            eprintln!("Failed to cleanup leftover repo");
+        }
+        e
+    };
 
     if let Some(parent) = repo_data.parent.as_deref() {
-        local_repo.remote("upstream", git_url(parent, ssh)?.as_str())?;
+        let parent_url = match git_url(parent, ssh) {
+            Ok(url) => url,
+            Err(e) => {
+                return Err(cleanup_repo(e).await);
+            }
+        };
+        if let Err(e) = local_repo.remote("upstream", parent_url.as_str()) {
+            return Err(cleanup_repo(e.into()).await);
+        }
     }
 
     ftl_println!(
@@ -1991,9 +2012,20 @@ pub fn clone_repo(
     }
     options.remote_callbacks(callbacks);
 
-    let local_repo = git2::build::RepoBuilder::new()
+    let local_repo = match git2::build::RepoBuilder::new()
         .fetch_options(options)
-        .clone(url.as_str(), path)?;
+        .clone(url.as_str(), path)
+    {
+        Ok(repo) => repo,
+        Err(e) => {
+            if std::fs::remove_dir_all(path).is_err() {
+                // This should not happen outside of race
+                // conditions but technically, it can
+                eprintln!("Unable to cleanup repo");
+            }
+            return Err(e.into());
+        }
+    };
     if fancy {
         print!("{clear_line}{show_cursor}\r");
     }
