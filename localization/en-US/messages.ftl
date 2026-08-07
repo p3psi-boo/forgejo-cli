@@ -409,6 +409,7 @@ msg-issue-create-success = created issue #{$number}: {$title}
 help-cmd-issue-view = View an issue's info
 help-arg-issue-view-issue = The issue to view
 help-cmd-issue-view-body = View an issue's title and body. The default
+msg-issue-view-pr-as-issue = This is a PR, not an issue
 msg-issue-view-header = 
     {STYLE("yellow")}{$title} {STYLE("dark-grey")}#{$number}{STYLE("reset")}"
     By {STYLE("white")}{$author}{STYLE("reset")} {-dash} {$state ->
