@@ -374,7 +374,7 @@ async fn user_search(api: &Forgejo, query: &str, page: Option<usize>) -> eyre::R
     Ok(())
 }
 
-async fn view_user(api: &Forgejo, user: Option<&str>) -> eyre::Result<()> {
+pub(crate) async fn view_user(api: &Forgejo, user: Option<&str>) -> eyre::Result<()> {
     let user_data = match user {
         Some(user) => api.user_get(user).await?,
         None => api.user_get_current().await?,

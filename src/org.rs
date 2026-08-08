@@ -8,7 +8,10 @@ use forgejo_api::{
 };
 use futures::{TryStreamExt, future};
 
-use crate::{SpecialRender, ftl_bail, ftl_eprintln, ftl_print, ftl_println, h, lh, repo::RepoInfo};
+use crate::{
+    SpecialRender, ftl_bail, ftl_eprintln, ftl_print, ftl_println, h, lh, repo::RepoInfo,
+    user::view_user,
+};
 
 mod team;
 
@@ -211,7 +214,14 @@ async fn list_orgs(api: &Forgejo, page: u32, only_member_of: bool) -> eyre::Resu
 }
 
 async fn view_org(api: &Forgejo, name: String) -> eyre::Result<()> {
-    let org = api.org_get(&name).await?;
+    let org = match api.org_get(&name).await {
+        Ok(org) => org,
+        Err(_) => {
+            view_user(api, Some(&name)).await?;
+            ftl_println!("msg-org-view-user-as-org");
+            return Ok(());
+        }
+    };
 
     let SpecialRender {
         bold, dash, reset, ..

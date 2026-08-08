@@ -100,6 +100,7 @@ msg-org-list-page_number = Page {$page} of {$total}
 
 help-cmd-org-view = View info about an organization
 help-arg-org-view-name = The name of the organization to view
+msg-org-view-user-as-org = This account is a user
 msg-org-view-org_name = { OPT($full_name) ->
        *[none] {STYLE("bold", "bright-cyan")}{$name}{STYLE("reset")}
         [some] {STYLE("bold", "bright-cyan")}{$full_name}{STYLE("reset")} {STYLE("light-gray")}({$name}){STYLE("reset")}
