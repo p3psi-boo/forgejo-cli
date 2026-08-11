@@ -882,6 +882,7 @@ msg-repo-fallback_host-invalid_url = warn: `FJ_FALLBACK_HOST` is not set to a va
 msg-repo-arg_no_owner = repo name should be in the format [HOST/]OWNER/NAME
 
 msg-repo-name_needed = couldn't get repo name, please specify
+msg-repo-conflicting_hosts = conflicting hosts {$host_a} and {$host_b}. please only specify one
 
 help-cmd-repo-create = Create a new repository
 help-arg-repo-create-remote = Creates a new remote with the given name for the new repo
@@ -898,7 +899,6 @@ msg-repo-create-detached_head = HEAD is not on a branch; cannot push to remote
 msg-repo-create-branch_invalid_utf8 = branch name invalid utf-8
 
 help-cmd-repo-fork = Fork a repository onto your account
-msg-repo-fork-conflicting_hosts = conflicting hosts {$host_a} and {$host_b}. please only specify one
 msg-repo-fork-success = Forked {$parent_owner}/{$parent_name} into {$fork_name}
 
 help-cmd-repo-migrate = Migrate or mirror an existing repository

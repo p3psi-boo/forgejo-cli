@@ -221,6 +221,22 @@ impl RepoInfo {
     }
 }
 
+fn check_conflicting_hosts(repo_host: Option<&str>, host_name: Option<&str>) -> eyre::Result<()> {
+    fn strip(s: &str) -> &str {
+        let no_scheme = s
+            .strip_prefix("https://")
+            .or_else(|| s.strip_prefix("http://"))
+            .unwrap_or(s);
+        no_scheme.trim_end_matches('/')
+    }
+    if let (Some(a), Some(b)) = (repo_host, host_name)
+        && strip(a) != strip(b)
+    {
+        ftl_bail!("msg-repo-conflicting_hosts", host_a = a, host_b = b);
+    }
+    Ok(())
+}
+
 fn fallback_host() -> Option<Url> {
     if let Some(envvar) = std::env::var_os("FJ_FALLBACK_HOST") {
         let out = envvar.to_str().and_then(|x| x.parse::<Url>().ok());
@@ -656,20 +672,7 @@ impl RepoCommand {
                 .await?;
             }
             RepoCommand::Fork { repo, name, remote } => {
-                fn strip(s: &str) -> &str {
-                    let no_scheme = s
-                        .strip_prefix("https://")
-                        .or_else(|| s.strip_prefix("http://"))
-                        .unwrap_or(s);
-
-                    no_scheme.strip_suffix("/").unwrap_or(no_scheme)
-                }
-                if let (Some(a), Some(b)) = (repo.host.as_deref(), host_name)
-                    && strip(a) != strip(b)
-                {
-                    ftl_bail!("msg-repo-fork-conflicting_hosts", host_a = a, host_b = b);
-                }
-
+                check_conflicting_hosts(repo.host.as_deref(), host_name)?;
                 let repo_info =
                     RepoInfo::get_current(host_name, Some(&repo), remote.as_deref(), keys)?;
                 let api = keys.get_api(repo_info.host_url()).await?;

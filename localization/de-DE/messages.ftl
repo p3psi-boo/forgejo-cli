@@ -323,11 +323,11 @@ msg-repo-no_info_given =
 msg-repo-fallback_host-invalid_url = Warnung: `FJ_FALLBACK_HOST` ist keine gültige URL!
 msg-repo-arg_no_owner = Reponame sollte im Format [HOST/]OWNER/NAME sein.
 msg-repo-name_needed = Reponame konnte nicht gefunden werden, bitte angeben.
+msg-repo-conflicting_hosts = Die Hosts { $host_a } und { $host_b } stehen im Konflikt. Bitte geben Sie nur einen an.
 msg-repo-create-remote_exists = Ein Remote namens \"{ $remote_name }\" existiert bereits.
 msg-repo-create-success = Neues Repo bei { $url } erstellt.
 msg-repo-create-detached_head = HEAD ist auf keinem Branch; kann nicht auf ein Remote schieben.
 msg-repo-create-branch_invalid_utf8 = Der Branchname ist kein gültiges UTF-8.
-msg-repo-fork-conflicting_hosts = Die Hosts { $host_a } und { $host_b } stehen im Konflikt. Bitte geben Sie nur einen an.
 msg-repo-fork-success = { $parent_owner }/{ $parent_name } wurde zu { $fork_name } geforkt.
 msg-repo-migrate-git_only =
     Migration von einem `git`-Dienst unterstützt keine Gegenstände außer LFS.
