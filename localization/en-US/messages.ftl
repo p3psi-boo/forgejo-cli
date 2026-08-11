@@ -901,6 +901,11 @@ msg-repo-create-branch_invalid_utf8 = branch name invalid utf-8
 help-cmd-repo-fork = Fork a repository onto your account
 msg-repo-fork-success = Forked {$parent_owner}/{$parent_name} into {$fork_name}
 
+help-cmd-repo-generate = Create a new repository from a template
+help-arg-repo-generate-name = Name of the new repository, defaults to the template's name
+help-arg-repo-generate-private = Whether the new repository should be private
+msg-repo-generate-success = created {$name} from {$template_owner}/{$template_name} at {$url}
+
 help-cmd-repo-migrate = Migrate or mirror an existing repository
 help-arg-repo-migrate-repo = URL of the repo to migrate
 help-arg-repo-migrate-name = Name of the new mirror, and optionally which org/user should own it

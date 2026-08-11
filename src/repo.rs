@@ -413,6 +413,18 @@ pub enum RepoCommand {
         #[clap(long, short = 'R')]
         remote: Option<String>,
     },
+    #[clap(about = h!("cmd-repo-generate"))]
+    Generate {
+        repo: RepoArg,
+        #[clap(help = h!("arg-repo-generate-name"))]
+        #[clap(long)]
+        name: Option<String>,
+        #[clap(help = h!("arg-repo-generate-private"))]
+        #[clap(long, short = 'P')]
+        private: bool,
+        #[clap(long, short = 'R')]
+        remote: Option<String>,
+    },
     #[clap(about = h!("cmd-repo-migrate"))]
     Migrate {
         #[clap(help = h!("arg-repo-migrate-repo"))]
@@ -680,6 +692,21 @@ impl RepoCommand {
                     .name()
                     .ok_or_else(|| ftl_eyre!("msg-repo-name_needed"))?;
                 fork_repo(&api, repo, name).await?
+            }
+            RepoCommand::Generate {
+                repo,
+                name,
+                private,
+                remote,
+            } => {
+                check_conflicting_hosts(repo.host.as_deref(), host_name)?;
+                let repo_info =
+                    RepoInfo::get_current(host_name, Some(&repo), remote.as_deref(), keys)?;
+                let api = keys.get_api(repo_info.host_url()).await?;
+                let template = repo_info
+                    .name()
+                    .ok_or_else(|| ftl_eyre!("msg-repo-name_needed"))?;
+                generate_repo(&api, template, name, private).await?
             }
             RepoCommand::Migrate {
                 repo,
@@ -1490,6 +1517,49 @@ async fn fork_repo(api: &Forgejo, repo: &RepoName, name: Option<String>) -> eyre
         parent_owner = repo.owner(),
         parent_name = repo.name(),
         fork_name,
+    );
+
+    Ok(())
+}
+
+async fn generate_repo(
+    api: &Forgejo,
+    template: &RepoName,
+    name: Option<String>,
+    private: bool,
+) -> eyre::Result<()> {
+    let owner = api
+        .user_get_current()
+        .await?
+        .login
+        .ok_or_eyre("current user does not have username")?;
+    let opt = forgejo_api::structs::GenerateRepoOption {
+        avatar: None,
+        default_branch: None,
+        description: None,
+        git_content: Some(true),
+        git_hooks: None,
+        labels: None,
+        name: name.unwrap_or_else(|| template.name().to_owned()),
+        owner,
+        private: Some(private),
+        protected_branch: None,
+        topics: None,
+        webhooks: None,
+    };
+    let new_repo = api
+        .generate_repo(template.owner(), template.name(), opt)
+        .await?;
+    let html_url = new_repo
+        .html_url
+        .as_ref()
+        .ok_or_eyre("new_repo does not have html_url")?;
+    ftl_println!(
+        "msg-repo-generate-success",
+        name = new_repo.name.unwrap_or_default(),
+        template_owner = template.owner(),
+        template_name = template.name(),
+        url = html_url.as_str(),
     );
 
     Ok(())
