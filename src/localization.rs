@@ -59,13 +59,30 @@ pub mod bundles {
         LOCALE.get_or_init(init_from_env)
     }
 
+    /// Normalize a POSIX locale string (e.g. `de_DE.UTF-8`, `de-DE@euro`) into
+    /// a BCP 47 language identifier that [`unic_langid`] can parse.
+    ///
+    /// Strips the codeset (`.UTF-8`) and modifier (`@euro`) suffixes that are
+    /// part of POSIX locale syntax but not valid in BCP 47, and converts the
+    /// underscore separator between language and script/territory to a hyphen.
+    fn normalize_posix_locale(raw: &str) -> String {
+        let s = raw.trim();
+        // Strip codeset (`.UTF-8`) and modifier (`@euro`) suffixes.
+        let before_at = s.split('@').next().unwrap_or(s);
+        let before_dot = before_at.split('.').next().unwrap_or(before_at);
+        // Convert underscore to hyphen (POSIX uses `de_DE`, BCP 47 uses `de-DE`).
+        before_dot.replace('_', "-")
+    }
+
     pub fn init_from_env() -> &'static [&'static LazyLock<Bundle>] {
         use std::io::IsTerminal;
         let is_tty = std::io::stdout().is_terminal();
         if is_tty {
-            let lang = std::env::var("LC_MESSAGES")
+            let raw = std::env::var("LC_MESSAGES")
                 .or_else(|_| std::env::var("LANG"))
-                .unwrap_or_default()
+                .unwrap_or_default();
+            let normalized = normalize_posix_locale(&raw);
+            let lang = normalized
                 .parse()
                 .unwrap_or_else(|_| langid!("en-US"));
             init_to(&lang)
@@ -99,6 +116,62 @@ pub mod bundles {
     }
 
     pub static LOCALE: OnceLock<&[&LazyLock<Bundle>]> = OnceLock::new();
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_normalize_posix_locale_strips_codeset() {
+            assert_eq!(normalize_posix_locale("de_DE.UTF-8"), "de-DE");
+            assert_eq!(normalize_posix_locale("de-DE.UTF-8"), "de-DE");
+            assert_eq!(normalize_posix_locale("de_DE.utf8"), "de-DE");
+        }
+
+        #[test]
+        fn test_normalize_posix_locale_strips_modifier() {
+            assert_eq!(normalize_posix_locale("de_DE@euro"), "de-DE");
+            assert_eq!(normalize_posix_locale("de-DE@euro"), "de-DE");
+        }
+
+        #[test]
+        fn test_normalize_posix_locale_strips_both() {
+            assert_eq!(normalize_posix_locale("de_DE.UTF-8@euro"), "de-DE");
+            assert_eq!(normalize_posix_locale("zh_CN.UTF-8"), "zh-CN");
+            assert_eq!(normalize_posix_locale("en_US.UTF-8"), "en-US");
+        }
+
+        #[test]
+        fn test_normalize_posix_locale_bare_lang() {
+            assert_eq!(normalize_posix_locale("de"), "de");
+            assert_eq!(normalize_posix_locale("de_DE"), "de-DE");
+            assert_eq!(normalize_posix_locale("en-US"), "en-US");
+        }
+
+        #[test]
+        fn test_normalize_posix_locale_empty() {
+            assert_eq!(normalize_posix_locale(""), "");
+            assert_eq!(normalize_posix_locale("  "), "");
+        }
+
+        #[test]
+        fn test_normalize_posix_locale_c_posix() {
+            // `C` is a valid POSIX locale but too short to be a BCP 47
+            // language subtag (min 2 chars), so it fails parsing and falls
+            // through to en-US via `init_from_env`.
+            let c_norm = normalize_posix_locale("C");
+            assert!(c_norm.parse::<unic_langid::LanguageIdentifier>().is_err());
+            // `POSIX` is also a POSIX locale; it may parse as a 6-char language
+            // subtag depending on the unic-langid version, but it will not
+            // match any known language in `init_to()`, so it still falls back
+            // to en-US.
+            let posix_norm = normalize_posix_locale("POSIX");
+            // We only care that it doesn't match a real locale; verify the
+            // normalized form does not start with a known language code.
+            assert!(!["en", "de", "fi", "fr", "it", "pl", "ru", "tok", "zh"]
+                .contains(&posix_norm.as_str()));
+        }
+    }
 }
 
 mod functions {
