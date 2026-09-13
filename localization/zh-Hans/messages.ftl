@@ -224,7 +224,7 @@ msg-pr-view-comment_count =
         [one] 1 条评论
        *[other] { $comments } 条评论
     }
-msg-pr-status-merged = { STYLE("bright-magenta") }已由{ STYLE("reset") } { $merged_by } 于 { DATETIME($created_at, dateStyle: "long", timeStyle: "long") } 合并
+msg-pr-status-merged = { STYLE("bright-magenta") }已由{ STYLE("reset") } { $merged_by } 于 { DATETIME($merged_at, dateStyle: "long", timeStyle: "long") } 合并
 msg-pr-status-header =
     { $state ->
         [draft] { STYLE("light-grey") }草稿{ STYLE("reset") } { -dash } 无法合并草稿 PR

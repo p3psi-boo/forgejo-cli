@@ -646,7 +646,7 @@ help-arg-pr-view-commits-oneline = View one commit per line
 help-cmd-pr-status = View the mergability and CI status of a pull request
 help-arg-pr-status-id = The pull request to view
 help-arg-pr-status-wait = Wait for all checks to finish before exiting
-msg-pr-status-merged = {STYLE("bright-magenta")}Merged{STYLE("reset")} by {$merged_by} on {DATETIME($created_at, dateStyle: "long", timeStyle: "long")}
+msg-pr-status-merged = {STYLE("bright-magenta")}Merged{STYLE("reset")} by {$merged_by} on {DATETIME($merged_at, dateStyle: "long", timeStyle: "long")}
 msg-pr-status-header = {$state ->
         [draft] {STYLE("light-grey")}Draft{STYLE("reset")} {-dash} Can't merge draft PR
         [open] {STYLE("bright-green")}Open{STYLE("reset")} {-dash} {$mergeable ->

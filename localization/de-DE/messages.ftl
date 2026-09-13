@@ -224,7 +224,7 @@ msg-pr-view-comment_count =
         [one] 1 Kommentar
        *[other] { $comments } Kommentare
     }
-msg-pr-status-merged = { STYLE("bright-magenta") }Zusammengeführt{ STYLE("reset") } von { $merged_by } am { DATETIME($created_at, dateStyle: "long", timeStyle: "long") }
+msg-pr-status-merged = { STYLE("bright-magenta") }Zusammengeführt{ STYLE("reset") } von { $merged_by } am { DATETIME($merged_at, dateStyle: "long", timeStyle: "long") }
 msg-pr-status-header =
     { $state ->
         [draft] { STYLE("light-grey") }Draft{ STYLE("reset") } { -dash } Entwurf PR kann nicht zusammengeführt werden

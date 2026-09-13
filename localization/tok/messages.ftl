@@ -203,7 +203,7 @@ msg-pr-view-header =
         [some] ante li kama tan `{ $head_branch }` li tawa `{ $base_branch }`
     }
 msg-pr-view-comment_count = { $comments } toki li lon ante wile ni
-msg-pr-status-merged = { STYLE("bright-magenta") }ante li tawa mama ona{ STYLE("reset") }. { $merged_by } li wan e ona lon tenpo { DATETIME($created_at, dateStyle: "long", timeStyle: "long") }
+msg-pr-status-merged = { STYLE("bright-magenta") }ante li tawa mama ona{ STYLE("reset") }. { $merged_by } li wan e ona lon tenpo { DATETIME($merged_at, dateStyle: "long", timeStyle: "long") }
 msg-pr-status-header =
     { $state ->
         [draft] { STYLE("light-grey") }ona li sin{ STYLE("reset") } { -dash } la sina ken ala wan e ona
