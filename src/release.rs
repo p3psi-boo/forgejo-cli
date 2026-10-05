@@ -557,13 +557,11 @@ async fn download_asset(
                 .await?
         }
     };
-    let real_output = output
-        .as_deref()
-        .unwrap_or_else(|| std::path::Path::new(&asset));
+    let real_output = resolve_asset_output_path(&asset, output.as_deref())?;
     tokio::fs::OpenOptions::new()
         .create_new(true)
         .write(true)
-        .open(real_output)
+        .open(&real_output)
         .await?
         .write_all(file.as_ref())
         .await?;
@@ -619,4 +617,86 @@ async fn delete_release(
             .await?;
     }
     Ok(())
+}
+
+pub(crate) fn safe_asset_filename(asset: &str) -> eyre::Result<std::path::PathBuf> {
+    let normalized = asset.replace('\\', "/");
+    let path = std::path::Path::new(&normalized);
+    let file_name = path
+        .file_name()
+        .and_then(|f| f.to_str())
+        .ok_or_else(|| eyre!("invalid asset name `{asset}`: missing valid file name"))?;
+    if file_name.is_empty() || file_name == "." || file_name == ".." {
+        return Err(eyre!(
+            "invalid asset name `{asset}`: cannot determine safe file name"
+        ));
+    }
+    Ok(std::path::PathBuf::from(file_name))
+}
+
+pub(crate) fn resolve_asset_output_path(
+    asset: &str,
+    output: Option<&std::path::Path>,
+) -> eyre::Result<std::path::PathBuf> {
+    match output {
+        Some(path) if path.is_dir() => {
+            let file_name = safe_asset_filename(asset)?;
+            Ok(path.join(file_name))
+        }
+        Some(path) => Ok(path.to_path_buf()),
+        None => safe_asset_filename(asset),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn test_safe_asset_filename_normal() {
+        assert_eq!(
+            safe_asset_filename("release-v1.0.tar.gz").unwrap(),
+            Path::new("release-v1.0.tar.gz")
+        );
+        assert_eq!(
+            safe_asset_filename("nested/dir/asset.zip").unwrap(),
+            Path::new("asset.zip")
+        );
+    }
+
+    #[test]
+    fn test_safe_asset_filename_path_traversal() {
+        assert_eq!(
+            safe_asset_filename("../../evil.sh").unwrap(),
+            Path::new("evil.sh")
+        );
+        assert_eq!(
+            safe_asset_filename("..\\..\\evil.exe").unwrap(),
+            Path::new("evil.exe")
+        );
+        assert_eq!(
+            safe_asset_filename("/etc/passwd").unwrap(),
+            Path::new("passwd")
+        );
+    }
+
+    #[test]
+    fn test_safe_asset_filename_invalid() {
+        assert!(safe_asset_filename("").is_err());
+        assert!(safe_asset_filename(".").is_err());
+        assert!(safe_asset_filename("..").is_err());
+        assert!(safe_asset_filename("../..").is_err());
+        assert!(safe_asset_filename("/").is_err());
+    }
+
+    #[test]
+    fn test_resolve_asset_output_path() {
+        let default_path = resolve_asset_output_path("../../payload.bin", None).unwrap();
+        assert_eq!(default_path, Path::new("payload.bin"));
+
+        let explicit = Path::new("custom/path/out.bin");
+        let path = resolve_asset_output_path("payload.bin", Some(explicit)).unwrap();
+        assert_eq!(path, explicit);
+    }
 }
