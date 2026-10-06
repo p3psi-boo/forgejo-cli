@@ -701,19 +701,13 @@ mod tests {
     #[test]
     fn test_safe_asset_filename_windows_drive_paths() {
         // Absolute style: C:\foo and C:\path\to\asset.zip
-        assert_eq!(
-            safe_asset_filename(r"C:\foo").unwrap(),
-            Path::new("C__foo")
-        );
+        assert_eq!(safe_asset_filename(r"C:\foo").unwrap(), Path::new("C__foo"));
         assert_eq!(
             safe_asset_filename(r"C:\path\to\asset.zip").unwrap(),
             Path::new("C__path_to_asset.zip")
         );
         // Relative style: C:foo and C:path/to/asset.zip
-        assert_eq!(
-            safe_asset_filename("C:foo").unwrap(),
-            Path::new("C_foo")
-        );
+        assert_eq!(safe_asset_filename("C:foo").unwrap(), Path::new("C_foo"));
         assert_eq!(
             safe_asset_filename("C:path/to/asset.zip").unwrap(),
             Path::new("C_path_to_asset.zip")
