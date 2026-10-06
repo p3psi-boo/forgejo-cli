@@ -2179,7 +2179,9 @@ pub(crate) fn safe_default_clone_dir(repo_name: &str, suffix: &str) -> eyre::Res
         || repo_name == "."
         || repo_name == ".."
     {
-        bail!("invalid repository name `{repo_name}`: repository names cannot contain path separators, colons, or traversal components");
+        bail!(
+            "invalid repository name `{repo_name}`: repository names cannot contain path separators, colons, or traversal components"
+        );
     }
     Ok(PathBuf::from(format!("./{repo_name}{suffix}")))
 }
