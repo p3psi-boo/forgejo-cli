@@ -426,7 +426,7 @@ async fn browse_user(api: &Forgejo, host_url: &url::Url, user: Option<&str>) -> 
     url.path_segments_mut()
         .map_err(|_| eyre::eyre!("invalid host url"))?
         .push(&username);
-    open::that_detached(url.as_str()).wrap_err("Failed to open URL")?;
+    crate::open_browser(&url)?;
 
     Ok(())
 }

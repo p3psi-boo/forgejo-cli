@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use clap::{Args, Subcommand};
-use eyre::{Context, OptionExt, eyre};
+use eyre::{OptionExt, eyre};
 use forgejo_api::structs::{
     Comment, CreateIssueCommentOption, CreateIssueOption, EditIssueOption, IssueGetCommentsQuery,
     IssueMeta,
@@ -632,7 +632,7 @@ async fn create_issue(
                 .path_segments_mut()
                 .expect("invalid url")
                 .extend(["issues", "new"]);
-            open::that_detached(issue_create_url.as_str()).wrap_err("Failed to open URL")?;
+            crate::open_browser(&issue_create_url)?;
         }
         _ => {
             unreachable!()
@@ -935,7 +935,7 @@ pub async fn browse_issue(repo: &RepoName, api: &Forgejo, id: i64) -> eyre::Resu
         .html_url
         .as_ref()
         .ok_or_else(|| eyre::eyre!("issue does not have html_url"))?;
-    open::that_detached(html_url.as_str()).wrap_err("Failed to open URL")?;
+    crate::open_browser(html_url)?;
     Ok(())
 }
 

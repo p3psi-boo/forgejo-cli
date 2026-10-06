@@ -2,7 +2,7 @@ use std::{io::Write, path::PathBuf, str::FromStr};
 
 use base64ct::Encoding;
 use clap::{Args, Subcommand};
-use eyre::{Context, OptionExt, Result, eyre};
+use eyre::{Context, OptionExt, Result, bail, eyre};
 use forgejo_api::{
     ApiError, ApiErrorKind, Forgejo, ForgejoError,
     structs::{CreateRepoOption, Repository},
@@ -888,7 +888,7 @@ impl RepoCommand {
                     .map_err(|_| eyre!("url invalid"))?
                     .extend([repo.owner(), repo.name()]);
 
-                open::that_detached(url.as_str()).wrap_err("Failed to open URL")?;
+                crate::open_browser(&url)?;
             }
             RepoCommand::Labels {
                 repo,
@@ -1892,7 +1892,10 @@ async fn cmd_clone_repo(
         .as_deref()
         .ok_or_eyre("repo does not have full name")?;
 
-    let path = path.unwrap_or_else(|| PathBuf::from(format!("./{repo_name}")));
+    let path = match path {
+        Some(p) => p,
+        None => safe_default_clone_dir(repo_name, "")?,
+    };
 
     let local_repo = clone_repo(clone_url, &path, identity_file.as_deref())?;
 
@@ -2163,4 +2166,50 @@ async fn find_user_label(api: &Forgejo, repo: &RepoName, id: &str) -> eyre::Resu
         .find(|l| l.name.as_ref().map(|n| n == id).unwrap_or_default())
         .and_then(|l| l.id)
         .ok_or_eyre("No label found with the given name.")
+}
+
+pub(crate) fn safe_default_clone_dir(repo_name: &str, suffix: &str) -> eyre::Result<PathBuf> {
+    if repo_name.is_empty() {
+        bail!("invalid repository name `{repo_name}`: repository name cannot be empty");
+    }
+    if repo_name.contains('/')
+        || repo_name.contains('\\')
+        || repo_name.contains(':')
+        || repo_name.contains('\0')
+        || repo_name == "."
+        || repo_name == ".."
+    {
+        bail!("invalid repository name `{repo_name}`: repository names cannot contain path separators, colons, or traversal components");
+    }
+    Ok(PathBuf::from(format!("./{repo_name}{suffix}")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_safe_default_clone_dir_normal() {
+        let path = safe_default_clone_dir("my-repo", "-wiki").unwrap();
+        assert_eq!(path, PathBuf::from("./my-repo-wiki"));
+
+        let repo_path = safe_default_clone_dir("my-repo", "").unwrap();
+        assert_eq!(repo_path, PathBuf::from("./my-repo"));
+    }
+
+    #[test]
+    fn test_safe_default_clone_dir_invalid() {
+        // Path traversal
+        assert!(safe_default_clone_dir("../../evil", "-wiki").is_err());
+        assert!(safe_default_clone_dir("..\\..\\windows_evil", "-wiki").is_err());
+        assert!(safe_default_clone_dir("/absolute/path", "-wiki").is_err());
+        // Windows drive letter paths
+        assert!(safe_default_clone_dir(r"C:\foo", "-wiki").is_err());
+        assert!(safe_default_clone_dir("C:foo", "-wiki").is_err());
+        // Special names
+        assert!(safe_default_clone_dir("", "-wiki").is_err());
+        assert!(safe_default_clone_dir(".", "-wiki").is_err());
+        assert!(safe_default_clone_dir("..", "-wiki").is_err());
+        assert!(safe_default_clone_dir("bad\0name", "-wiki").is_err());
+    }
 }

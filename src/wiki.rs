@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use base64ct::Encoding;
 use clap::{Args, Subcommand};
-use eyre::{Context, OptionExt, bail, eyre};
+use eyre::{Context, OptionExt};
 use forgejo_api::Forgejo;
 
 use crate::{
@@ -129,8 +129,7 @@ async fn browse_wiki_page(repo: &RepoName, api: &Forgejo, page: &str) -> eyre::R
         .html_url
         .as_ref()
         .ok_or_eyre("page does not have html url")?;
-    validate_web_url(html_url)?;
-    open::that_detached(html_url.as_str()).wrap_err("Failed to open URL")?;
+    crate::open_browser(html_url)?;
     Ok(())
 }
 
@@ -171,7 +170,7 @@ async fn clone_wiki(
 
     let path = match path {
         Some(p) => p,
-        None => safe_default_clone_dir(repo_name, "-wiki")?,
+        None => crate::repo::safe_default_clone_dir(repo_name, "-wiki")?,
     };
 
     crate::repo::clone_repo(&clone_url, &path, identity_file.as_deref())?;
@@ -182,83 +181,4 @@ async fn clone_wiki(
     );
 
     Ok(())
-}
-
-pub(crate) fn validate_web_url(url: &url::Url) -> eyre::Result<()> {
-    match url.scheme() {
-        "http" | "https" => Ok(()),
-        scheme => {
-            bail!("refusing to open unsupported URL scheme `{scheme}`: expected http or https")
-        }
-    }
-}
-
-pub(crate) fn safe_default_clone_dir(repo_name: &str, suffix: &str) -> eyre::Result<PathBuf> {
-    let normalized = repo_name.replace('\\', "/");
-    let path = std::path::Path::new(&normalized);
-    let dir_name = path.file_name().and_then(|f| f.to_str()).ok_or_else(|| {
-        eyre!("invalid repository name `{repo_name}`: missing valid directory name")
-    })?;
-    if dir_name.is_empty() || dir_name == "." || dir_name == ".." {
-        return Err(eyre!(
-            "invalid repository name `{repo_name}`: cannot determine safe directory name"
-        ));
-    }
-    Ok(PathBuf::from(format!("./{dir_name}{suffix}")))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_validate_web_url_valid() {
-        let http_url = url::Url::parse("http://codeberg.org/owner/repo/wiki/Home").unwrap();
-        assert!(validate_web_url(&http_url).is_ok());
-
-        let https_url = url::Url::parse("https://codeberg.org/owner/repo/wiki/Home").unwrap();
-        assert!(validate_web_url(&https_url).is_ok());
-    }
-
-    #[test]
-    fn test_validate_web_url_invalid_schemes() {
-        for invalid in &[
-            "file:///etc/passwd",
-            "javascript:alert(1)",
-            "ssh://git@codeberg.org/repo.git",
-            "ftp://files.example.com",
-            "data:text/html,hello",
-        ] {
-            let parsed = url::Url::parse(invalid).unwrap();
-            let res = validate_web_url(&parsed);
-            assert!(res.is_err(), "expected error for URL: {invalid}");
-        }
-    }
-
-    #[test]
-    fn test_safe_default_clone_dir_normal() {
-        let path = safe_default_clone_dir("my-repo", "-wiki").unwrap();
-        assert_eq!(path, PathBuf::from("./my-repo-wiki"));
-    }
-
-    #[test]
-    fn test_safe_default_clone_dir_path_traversal() {
-        let path1 = safe_default_clone_dir("../../evil", "-wiki").unwrap();
-        assert_eq!(path1, PathBuf::from("./evil-wiki"));
-
-        let path2 = safe_default_clone_dir("..\\..\\windows_evil", "-wiki").unwrap();
-        assert_eq!(path2, PathBuf::from("./windows_evil-wiki"));
-
-        let path3 = safe_default_clone_dir("/absolute/path/nested", "-wiki").unwrap();
-        assert_eq!(path3, PathBuf::from("./nested-wiki"));
-    }
-
-    #[test]
-    fn test_safe_default_clone_dir_invalid() {
-        assert!(safe_default_clone_dir("", "-wiki").is_err());
-        assert!(safe_default_clone_dir(".", "-wiki").is_err());
-        assert!(safe_default_clone_dir("..", "-wiki").is_err());
-        assert!(safe_default_clone_dir("../..", "-wiki").is_err());
-        assert!(safe_default_clone_dir("/", "-wiki").is_err());
-    }
 }

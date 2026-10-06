@@ -1402,7 +1402,7 @@ async fn create_pr(
             .path_segments_mut()
             .expect("invalid url")
             .extend(["compare", &format!("{base}...{head}")]);
-        open::that_detached(pr_create_url.as_str()).wrap_err("Failed to open URL")?;
+        crate::open_browser(&pr_create_url)?;
     } else {
         let body_from_file = match body_file {
             None => None,
@@ -2170,7 +2170,7 @@ pub async fn browse_pr(repo: &RepoName, api: &Forgejo, id: i64) -> eyre::Result<
         .html_url
         .as_ref()
         .ok_or_else(|| eyre::eyre!("pr does not have html_url"))?;
-    open::that_detached(html_url.as_str()).wrap_err("Failed to open URL")?;
+    crate::open_browser(html_url)?;
     Ok(())
 }
 

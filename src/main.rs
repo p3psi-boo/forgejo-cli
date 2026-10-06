@@ -3,7 +3,7 @@ use std::io::IsTerminal;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use eyre::{Context, OptionExt, eyre};
+use eyre::{Context, OptionExt, bail, eyre};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 mod keys;
@@ -1122,9 +1122,48 @@ pub async fn edit_labels(
     Ok(())
 }
 
+pub(crate) fn validate_web_url(url: &url::Url) -> eyre::Result<()> {
+    match url.scheme() {
+        "http" | "https" => Ok(()),
+        scheme => {
+            bail!("refusing to open unsupported URL scheme `{scheme}`: expected http or https")
+        }
+    }
+}
+
+pub(crate) fn open_browser(url: &url::Url) -> eyre::Result<()> {
+    validate_web_url(url)?;
+    open::that_detached(url.as_str()).wrap_err("Failed to open URL")?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_validate_web_url_valid() {
+        let http_url = url::Url::parse("http://codeberg.org/owner/repo/wiki/Home").unwrap();
+        assert!(validate_web_url(&http_url).is_ok());
+
+        let https_url = url::Url::parse("https://codeberg.org/owner/repo/wiki/Home").unwrap();
+        assert!(validate_web_url(&https_url).is_ok());
+    }
+
+    #[test]
+    fn test_validate_web_url_invalid_schemes() {
+        for invalid in &[
+            "file:///etc/passwd",
+            "javascript:alert(1)",
+            "ssh://git@codeberg.org/repo.git",
+            "ftp://files.example.com",
+            "data:text/html,hello",
+        ] {
+            let parsed = url::Url::parse(invalid).unwrap();
+            let res = validate_web_url(&parsed);
+            assert!(res.is_err(), "expected error for URL: {invalid}");
+        }
+    }
 
     #[test]
     fn test_ssh_url_parse_scp_like() {

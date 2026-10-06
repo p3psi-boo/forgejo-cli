@@ -219,7 +219,7 @@ async fn oauth_login(
         ("code_challenge", &code_challenge),
         ("state", &state),
     ]);
-    open::that_detached(auth_url.as_str())
+    crate::open_browser(&auth_url)
         .wrap_err_with(|| ftl_eyre!("msg-auth-login-oauth-login-open-fail"))?;
 
     let (handle, mut rx) = auth_server();

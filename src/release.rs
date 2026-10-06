@@ -1,5 +1,5 @@
 use clap::{Args, Subcommand};
-use eyre::{Context, OptionExt, eyre};
+use eyre::{OptionExt, eyre};
 use forgejo_api::{
     Forgejo,
     structs::{RepoCreateReleaseAttachmentQuery, RepoListReleasesQuery},
@@ -426,7 +426,7 @@ async fn browse_release(repo: &RepoName, api: &Forgejo, name: Option<String>) ->
                 .html_url
                 .as_ref()
                 .ok_or_else(|| eyre::eyre!("release does not have html_url"))?;
-            open::that_detached(html_url.as_str()).wrap_err("Failed to open URL")?;
+            crate::open_browser(html_url)?;
         }
         None => {
             let repo_data = api.repo_get(repo.owner(), repo.name()).await?;
@@ -435,7 +435,7 @@ async fn browse_release(repo: &RepoName, api: &Forgejo, name: Option<String>) ->
                 .clone()
                 .ok_or_else(|| eyre::eyre!("repository does not have html_url"))?;
             html_url.path_segments_mut().unwrap().push("releases");
-            open::that_detached(html_url.as_str()).wrap_err("Failed to open URL")?;
+            crate::open_browser(&html_url)?;
         }
     }
     Ok(())
