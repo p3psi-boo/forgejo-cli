@@ -1,5 +1,5 @@
 use clap::{Args, Subcommand};
-use eyre::{Context, OptionExt, eyre};
+use eyre::{Context, OptionExt, bail, eyre};
 use forgejo_api::{
     Forgejo,
     structs::{RepoCreateReleaseAttachmentQuery, RepoListReleasesQuery},
@@ -620,18 +620,26 @@ async fn delete_release(
 }
 
 pub(crate) fn safe_asset_filename(asset: &str) -> eyre::Result<std::path::PathBuf> {
-    let normalized = asset.replace('\\', "/");
-    let path = std::path::Path::new(&normalized);
-    let file_name = path
-        .file_name()
-        .and_then(|f| f.to_str())
-        .ok_or_else(|| eyre!("invalid asset name `{asset}`: missing valid file name"))?;
-    if file_name.is_empty() || file_name == "." || file_name == ".." {
-        return Err(eyre!(
-            "invalid asset name `{asset}`: cannot determine safe file name"
-        ));
+    if asset.is_empty() {
+        bail!("invalid asset name `{asset}`: asset name cannot be empty");
     }
-    Ok(std::path::PathBuf::from(file_name))
+    if asset.contains('\0') {
+        bail!("invalid asset name `{asset}`: contains null byte");
+    }
+
+    let sanitized: String = asset
+        .chars()
+        .map(|c| match c {
+            '/' | '\\' | ':' => '_',
+            other => other,
+        })
+        .collect();
+
+    if sanitized == "." || sanitized == ".." {
+        bail!("invalid asset name `{asset}`: cannot determine safe file name");
+    }
+
+    Ok(std::path::PathBuf::from(sanitized))
 }
 
 pub(crate) fn resolve_asset_output_path(
@@ -661,23 +669,54 @@ mod tests {
         );
         assert_eq!(
             safe_asset_filename("nested/dir/asset.zip").unwrap(),
-            Path::new("asset.zip")
+            Path::new("nested_dir_asset.zip")
         );
+    }
+
+    #[test]
+    fn test_safe_asset_filename_injective() {
+        let bar_foo = safe_asset_filename("bar/foo").unwrap();
+        let baz_foo = safe_asset_filename("baz/foo").unwrap();
+        assert_ne!(bar_foo, baz_foo);
+        assert_eq!(bar_foo, Path::new("bar_foo"));
+        assert_eq!(baz_foo, Path::new("baz_foo"));
     }
 
     #[test]
     fn test_safe_asset_filename_path_traversal() {
         assert_eq!(
             safe_asset_filename("../../evil.sh").unwrap(),
-            Path::new("evil.sh")
+            Path::new(".._.._evil.sh")
         );
         assert_eq!(
             safe_asset_filename("..\\..\\evil.exe").unwrap(),
-            Path::new("evil.exe")
+            Path::new(".._.._evil.exe")
         );
         assert_eq!(
             safe_asset_filename("/etc/passwd").unwrap(),
-            Path::new("passwd")
+            Path::new("_etc_passwd")
+        );
+    }
+
+    #[test]
+    fn test_safe_asset_filename_windows_drive_paths() {
+        // Absolute style: C:\foo and C:\path\to\asset.zip
+        assert_eq!(
+            safe_asset_filename(r"C:\foo").unwrap(),
+            Path::new("C__foo")
+        );
+        assert_eq!(
+            safe_asset_filename(r"C:\path\to\asset.zip").unwrap(),
+            Path::new("C__path_to_asset.zip")
+        );
+        // Relative style: C:foo and C:path/to/asset.zip
+        assert_eq!(
+            safe_asset_filename("C:foo").unwrap(),
+            Path::new("C_foo")
+        );
+        assert_eq!(
+            safe_asset_filename("C:path/to/asset.zip").unwrap(),
+            Path::new("C_path_to_asset.zip")
         );
     }
 
@@ -686,14 +725,13 @@ mod tests {
         assert!(safe_asset_filename("").is_err());
         assert!(safe_asset_filename(".").is_err());
         assert!(safe_asset_filename("..").is_err());
-        assert!(safe_asset_filename("../..").is_err());
-        assert!(safe_asset_filename("/").is_err());
+        assert!(safe_asset_filename("payload\0bad").is_err());
     }
 
     #[test]
     fn test_resolve_asset_output_path() {
         let default_path = resolve_asset_output_path("../../payload.bin", None).unwrap();
-        assert_eq!(default_path, Path::new("payload.bin"));
+        assert_eq!(default_path, Path::new(".._.._payload.bin"));
 
         let explicit = Path::new("custom/path/out.bin");
         let path = resolve_asset_output_path("payload.bin", Some(explicit)).unwrap();
