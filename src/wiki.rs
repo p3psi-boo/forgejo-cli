@@ -169,8 +169,9 @@ async fn clone_wiki(
         .ok_or_eyre("repo does not have full name")?;
 
     let path = path.unwrap_or_else(|| PathBuf::from(format!("./{repo_name}-wiki")));
+    let is_new_dir = tokio::fs::try_exists(&path).await?;
 
-    crate::repo::clone_repo(&clone_url, &path, identity_file.as_deref())?;
+    crate::repo::clone_repo(&clone_url, &path, identity_file.as_deref(), is_new_dir)?;
     ftl_println!(
         "msg-wiki-clone-success",
         repo = repo_full_name,

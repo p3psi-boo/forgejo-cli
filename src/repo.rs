@@ -1905,7 +1905,7 @@ async fn cmd_clone_repo(
     // so we only need to care about whether it already exists
     let is_new_dir = !tokio::fs::try_exists(&path).await?;
 
-    let local_repo = clone_repo(clone_url, &path, identity_file.as_deref())?;
+    let local_repo = clone_repo(clone_url, &path, identity_file.as_deref(), is_new_dir)?;
     let cleanup_repo = async |e: eyre::Report| {
         if is_new_dir && tokio::fs::remove_dir_all(&path).await.is_err() {
             // This should never happen, but technically it can. For example, in case of a race
@@ -1952,6 +1952,7 @@ pub fn clone_repo(
     url: &url::Url,
     path: &std::path::Path,
     identity_file: Option<&std::path::Path>,
+    is_new_dir: bool,
 ) -> eyre::Result<git2::Repository> {
     let SpecialRender {
         fancy,
@@ -2018,7 +2019,7 @@ pub fn clone_repo(
     {
         Ok(repo) => repo,
         Err(e) => {
-            if std::fs::remove_dir_all(path).is_err() {
+            if is_new_dir && std::fs::remove_dir_all(path).is_err() {
                 // This should not happen outside of race
                 // conditions but technically, it can
                 eprintln!("Unable to cleanup repo");
