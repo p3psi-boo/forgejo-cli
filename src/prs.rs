@@ -221,6 +221,16 @@ pub enum PrSubcommand {
         #[clap(subcommand)]
         command: Option<ReviewCommand>,
     },
+    #[clap(about = h!("cmd-pr-set-wip"))]
+    Wip {
+        #[clap(help = h!("arg-pr-set-wip-id"))]
+        pr: Option<IssueId>,
+    },
+    #[clap(about = h!("cmd-pr-unset-wip"))]
+    Unwip {
+        #[clap(help = h!("arg-pr-set-wip-id"))]
+        pr: Option<IssueId>,
+    },
 }
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]
@@ -685,6 +695,8 @@ impl PrCommand {
                     } => request_pr_review(repo, &api, id, reviewers, team_reviewers).await?,
                 }
             }
+            Wip { pr } => pr_set_wip(pr, repo, &api).await?,
+            Unwip { pr } => pr_unset_wip(pr, repo, &api).await?,
         }
         Ok(())
     }
@@ -713,6 +725,8 @@ impl PrCommand {
             | Close { pr, .. }
             | Merge { pr, .. }
             | Browse { id: pr }
+            | Wip { pr, .. }
+            | Unwip { pr, .. }
             | Review { id: pr, .. } => pr.as_ref().and_then(|x| x.repo.as_ref()),
         }
     }
@@ -744,6 +758,8 @@ impl PrCommand {
             | Close { pr, .. }
             | Merge { pr, .. }
             | Browse { id: pr, .. }
+            | Wip { pr, .. }
+            | Unwip { pr, .. }
             | Review { id: pr, .. } => match pr {
                 Some(pr) => eyre::eyre!(
                     "can't figure out what repo to access, try specifying with `{{owner}}/{{repo}}#{}`",
@@ -2366,6 +2382,45 @@ async fn check_branch_pair(
     {
         Ok(pr) => Ok(Some(pr)),
         Err(_) => Ok(None),
+    }
+}
+
+async fn pr_set_wip(pr: Option<IssueId>, repo: &RepoName, api: &Forgejo) -> eyre::Result<()> {
+    let id = pr.map(|pr| pr.number);
+    let pr = try_get_pr(repo, api, id).await?;
+    let title = pr
+        .title
+        .ok_or_else(|| eyre::eyre!("pr does not have title"))?;
+
+    let (_, id) = try_get_pr_number(repo, api, id).await?;
+
+    if !title.starts_with("WIP:") {
+        let new_title = format!("WIP: {title}");
+        crate::issues::edit_title(repo, api, id, Some(new_title)).await
+    } else {
+        ftl_bail!("msg-pr-wip-already_wip")
+    }
+}
+
+async fn pr_unset_wip(pr: Option<IssueId>, repo: &RepoName, api: &Forgejo) -> eyre::Result<()> {
+    let id = pr.map(|pr| pr.number);
+    let pr = try_get_pr(repo, api, id).await?;
+    let title = pr
+        .title
+        .ok_or_else(|| eyre::eyre!("pr does not have title"))?;
+
+    let (_, id) = try_get_pr_number(repo, api, id).await?;
+
+    if title.starts_with("WIP:") {
+        crate::issues::edit_title(
+            repo,
+            api,
+            id,
+            title.strip_prefix("WIP:").map(|t| t.trim().to_string()),
+        )
+        .await
+    } else {
+        ftl_bail!("msg-pr-wip-already_not_wip")
     }
 }
 

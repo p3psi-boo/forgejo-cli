@@ -856,6 +856,12 @@ help-arg-pr-close-with_msg-long =
 help-cmd-pr-browse = Open a pull request in your browser
 help-arg-pr-browse-id = The pull request to open in your browser
 
+help-cmd-pr-set-wip = Mark the pull request as work-in-progress
+help-cmd-pr-unset-wip = Mark the pull request as not work-in-progress
+help-arg-pr-set-wip-id = The pull request to set the work-in-progress status of
+msg-pr-wip-already_wip = pr is already marked as work in progress
+msg-pr-wip-already_not_wip = pr is already not marked as work in progress
+
 help-cmd-pr-search = Search a repository's pull requests
 help-arg-pr-search-state = Filter PRs by state. Default: open
 help-arg-pr-search-repo = The repo to search in
