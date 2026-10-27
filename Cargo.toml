@@ -45,7 +45,7 @@ eyre = "0.6.12"
 fluent-bundle = "0.16.0"
 fluent-datetime = "0.2.0"
 fluent-syntax = "0.12.0"
-forgejo-api = "0.12.0"
+forgejo-api = { version = "0.12.0", default-features = false, features = ["native-tls"] }
 futures = "0.3.31"
 git2 = { version = "0.21.0", features = ["https", "ssh"] }
 hyper = "1.6.0"
