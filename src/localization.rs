@@ -514,5 +514,9 @@ mod tests {
             msg.contains("step"),
             "unsupported-steps message missing step hint: {msg}"
         );
+
+        let path = ".cursor/skills/fj/SKILL.md";
+        let msg = crate::ftl_format!("msg-skill-write-success", path);
+        assert!(msg.contains(path), "`$path` left unresolved: {msg}");
     }
 }

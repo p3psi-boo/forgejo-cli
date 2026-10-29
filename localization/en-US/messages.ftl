@@ -12,6 +12,11 @@
 help-arg-remote = The local git remote that points to the repo to operate on
 help-arg-repo = The repo to operate on
 
+help-cmd-skill = Print or install the bundled coding-agent skill
+help-cmd-skill-write = Write the bundled coding-agent skill to a file
+help-arg-skill-write-path = Destination path. Defaults to .cursor/skills/fj/SKILL.md
+msg-skill-write-success = Wrote agent skill to {$path}.
+
 msg-repo_not_found = Could not find the specified repo
 
 msg-whoami = currently signed into {$name}@{$host}

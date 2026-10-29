@@ -18,6 +18,7 @@ mod org;
 mod prs;
 mod release;
 mod repo;
+mod skill;
 mod tag;
 mod user;
 mod version;
@@ -72,6 +73,8 @@ pub enum Command {
     Org(org::OrgCommand),
     Version(version::VersionCommand),
     Completion(completion::CompletionCommand),
+    #[clap(about = h!("cmd-skill"))]
+    Skill(skill::SkillCommand),
 }
 
 impl Command {
@@ -91,6 +94,7 @@ impl Command {
             Command::Org(subcommand) => subcommand.run(keys, host_name).await?,
             Command::Version(command) => command.run().await?,
             Command::Completion(subcommand) => subcommand.run(),
+            Command::Skill(command) => command.run().await?,
         }
         Ok(())
     }
