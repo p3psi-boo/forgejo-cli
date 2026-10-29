@@ -498,4 +498,21 @@ mod tests {
         let msg = crate::ftl_format!("msg-actions-dispatch-success", name, r#ref, n_inputs);
         assert!(msg.contains("main"), "`$ref` left unresolved: {msg}");
     }
+
+    #[test]
+    fn actions_view_messages_resolve() {
+        let run = "#12";
+        let msg = crate::ftl_format!("msg-actions-run-not_found", run);
+        assert!(msg.contains("#12"), "`$run` left unresolved: {msg}");
+
+        let job = 4_i64;
+        let msg = crate::ftl_format!("msg-actions-job-not_found", job);
+        assert!(msg.contains("4"), "`$job` left unresolved: {msg}");
+
+        let msg = crate::ftl_format!("msg-actions-unsupported-steps");
+        assert!(
+            msg.contains("step"),
+            "unsupported-steps message missing step hint: {msg}"
+        );
+    }
 }
