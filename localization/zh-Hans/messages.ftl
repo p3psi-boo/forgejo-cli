@@ -22,6 +22,11 @@ msg-auth-use_ssh-already_disabled = 尚未默认对 { $host } 使用 SSH
 msg-auth-add_token-prompt = 新密钥：
 msg-auth-add_token-already_exists = { $host } 的密钥已存在
 msg-auth-list-none = 无登录记录。
+help-cmd-skill = 打印或安装内置的 Coding Agent Skill
+help-cmd-skill-write = 将内置的 Coding Agent Skill 写到文件
+help-arg-skill-write-path = 目标路径。默认为 .cursor/skills/fj/SKILL.md
+msg-skill-write-success = 已将 Agent Skill 写入 {$path}。
+
 msg-actions-variable-create-already_exists = 变量已存在，请传递 --force 以替换它。
 msg-actions-variable-create-already_exists_forced = 变量已存在，正在更新。
 msg-actions-variable-delete-success = 变量 { $name } 已删除。

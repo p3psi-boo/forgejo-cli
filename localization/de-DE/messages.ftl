@@ -22,6 +22,11 @@ msg-auth-use_ssh-already_disabled = SSH wird bereits standardmäßig für { $hos
 msg-auth-add_token-prompt = neuer Schlüssel:
 msg-auth-add_token-already_exists = Schlüssel für { $host } existiert bereits
 msg-auth-list-none = Kein Logins.
+help-cmd-skill = Das mitgelieferte Coding-Agent-Skill ausgeben oder installieren
+help-cmd-skill-write = Das mitgelieferte Coding-Agent-Skill in eine Datei schreiben
+help-arg-skill-write-path = Zielpfad. Standard ist .cursor/skills/fj/SKILL.md
+msg-skill-write-success = Agent-Skill nach {$path} geschrieben.
+
 msg-actions-variable-create-already_exists = Die Variable existiert bereits. Übergeben Sie --force, um sie zu ersetzen.
 msg-actions-variable-create-already_exists_forced = Variable existiert bereits, aktualisiere...
 msg-actions-variable-delete-success = Variable { $name } gelöscht.
