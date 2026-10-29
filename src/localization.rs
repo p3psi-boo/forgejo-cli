@@ -508,5 +508,11 @@ mod tests {
         let job = 4_i64;
         let msg = crate::ftl_format!("msg-actions-job-not_found", job);
         assert!(msg.contains("4"), "`$job` left unresolved: {msg}");
+
+        let msg = crate::ftl_format!("msg-actions-unsupported-steps");
+        assert!(
+            msg.contains("step"),
+            "unsupported-steps message missing step hint: {msg}"
+        );
     }
 }

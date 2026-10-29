@@ -479,12 +479,42 @@ fn is_not_found(err: &ForgejoError) -> bool {
     )
 }
 
+fn is_unsupported_status(status: StatusCode) -> bool {
+    matches!(
+        status,
+        StatusCode::NOT_FOUND | StatusCode::METHOD_NOT_ALLOWED | StatusCode::NOT_IMPLEMENTED
+    )
+}
+
+fn is_unsupported(err: &ForgejoError) -> bool {
+    match err {
+        ForgejoError::ApiError(forgejo_api::ApiError {
+            kind: forgejo_api::ApiErrorKind::NotFound { .. },
+            ..
+        }) => true,
+        ForgejoError::ApiError(forgejo_api::ApiError {
+            kind: forgejo_api::ApiErrorKind::Other(status),
+            ..
+        }) => is_unsupported_status(*status),
+        _ => false,
+    }
+}
+
+fn job_has_steps(job: &ActionRunJob) -> bool {
+    job.steps.as_ref().is_some_and(|steps| !steps.is_empty())
+}
+
+struct LoadedJobs {
+    jobs: Vec<ActionRunJob>,
+    steps_unsupported: bool,
+}
+
 async fn lookup_run_by_number(
     repo: &RepoName,
     api: &Forgejo,
     number: i64,
 ) -> eyre::Result<Option<ActionRun>> {
-    let res = api
+    let res = match api
         .list_action_runs(
             repo.owner(),
             repo.name(),
@@ -493,7 +523,12 @@ async fn lookup_run_by_number(
                 ..Default::default()
             },
         )
-        .await?;
+        .await
+    {
+        Ok(res) => res,
+        Err(e) if is_unsupported(&e) => ftl_bail!("msg-actions-unsupported-runs"),
+        Err(e) => return Err(e.into()),
+    };
 
     Ok(res
         .workflow_runs
@@ -514,6 +549,7 @@ async fn resolve_run(repo: &RepoName, api: &Forgejo, raw: &str) -> eyre::Result<
                     )
                 })
             }
+            Err(e) if is_unsupported(&e) => ftl_bail!("msg-actions-unsupported-runs"),
             Err(e) => Err(e.into()),
         },
         RunSelector::Number(number) => {
@@ -534,22 +570,31 @@ async fn load_jobs(
     api: &Forgejo,
     run_id: i64,
     with_steps: bool,
-) -> eyre::Result<Vec<ActionRunJob>> {
-    let jobs = api
+) -> eyre::Result<LoadedJobs> {
+    let jobs = match api
         .list_action_run_jobs(repo.owner(), repo.name(), run_id)
-        .await?;
+        .await
+    {
+        Ok(jobs) => jobs,
+        Err(e) if is_unsupported(&e) => ftl_bail!("msg-actions-unsupported-jobs"),
+        Err(e) => return Err(e.into()),
+    };
 
     if !with_steps {
-        return Ok(jobs);
+        return Ok(LoadedJobs {
+            jobs,
+            steps_unsupported: false,
+        });
     }
 
     let mut detailed = Vec::with_capacity(jobs.len());
+    let mut steps_unsupported = false;
     for job in jobs {
         let Some(job_id) = job.id else {
             detailed.push(job);
             continue;
         };
-        if job.steps.as_ref().is_some_and(|steps| !steps.is_empty()) {
+        if job_has_steps(&job) || steps_unsupported {
             detailed.push(job);
             continue;
         }
@@ -559,11 +604,18 @@ async fn load_jobs(
             .await
         {
             Ok(detailed_job) => detailed.push(detailed_job),
-            Err(_) => detailed.push(job),
+            Err(e) if is_unsupported(&e) => {
+                steps_unsupported = true;
+                detailed.push(job);
+            }
+            Err(e) => return Err(e.into()),
         }
     }
 
-    Ok(detailed)
+    Ok(LoadedJobs {
+        steps_unsupported: steps_unsupported && !detailed.iter().any(job_has_steps),
+        jobs: detailed,
+    })
 }
 
 fn status_symbol(status: Option<&str>) -> String {
@@ -708,9 +760,11 @@ async fn view_run(
     print_run_header(&run);
     println!();
 
-    let jobs = load_jobs(repo, api, run_id, true).await?;
+    let loaded = load_jobs(repo, api, run_id, true).await?;
+    let steps_unsupported = loaded.steps_unsupported;
     let jobs = if let Some(job_id) = job_id {
-        let filtered: Vec<_> = jobs
+        let filtered: Vec<_> = loaded
+            .jobs
             .into_iter()
             .filter(|job| job.id == Some(job_id))
             .collect();
@@ -719,10 +773,13 @@ async fn view_run(
         }
         filtered
     } else {
-        jobs
+        loaded.jobs
     };
 
     if jobs.is_empty() {
+        if steps_unsupported {
+            ftl_bail!("msg-actions-unsupported-steps");
+        }
         ftl_println!("msg-actions-view-no_jobs");
         return Ok(());
     }
@@ -748,20 +805,24 @@ async fn view_run(
         }
     }
 
+    if steps_unsupported {
+        ftl_bail!("msg-actions-unsupported-steps");
+    }
+
     Ok(())
 }
 
 async fn view_jobs(repo: &RepoName, api: &Forgejo, raw: &str) -> eyre::Result<()> {
     let run = resolve_run(repo, api, raw).await?;
     let run_id = run.id.ok_or_eyre("server returned ActionRun without id")?;
-    let jobs = load_jobs(repo, api, run_id, false).await?;
+    let loaded = load_jobs(repo, api, run_id, false).await?;
 
-    if jobs.is_empty() {
+    if loaded.jobs.is_empty() {
         ftl_println!("msg-actions-view-no_jobs");
         return Ok(());
     }
 
-    for job in &jobs {
+    for job in &loaded.jobs {
         print_job_line(job);
     }
 
@@ -796,7 +857,7 @@ async fn print_job_logs(
     step: Option<u32>,
     attempt: Option<i64>,
 ) -> eyre::Result<()> {
-    let bytes = api
+    let bytes = match api
         .repo_get_action_job_logs(
             repo.owner(),
             repo.name(),
@@ -807,7 +868,12 @@ async fn print_job_logs(
                 ..Default::default()
             },
         )
-        .await?;
+        .await
+    {
+        Ok(bytes) => bytes,
+        Err(e) if is_unsupported(&e) => ftl_bail!("msg-actions-unsupported-logs"),
+        Err(e) => return Err(e.into()),
+    };
 
     let mut stdout = std::io::stdout();
     stdout.write_all(&bytes)?;
@@ -824,9 +890,14 @@ async fn download_run_logs(
     run_id: i64,
     out: Option<PathBuf>,
 ) -> eyre::Result<()> {
-    let bytes = api
+    let bytes = match api
         .repo_get_action_run_logs(repo.owner(), repo.name(), run_id)
-        .await?;
+        .await
+    {
+        Ok(bytes) => bytes,
+        Err(e) if is_unsupported(&e) => ftl_bail!("msg-actions-unsupported-logs"),
+        Err(e) => return Err(e.into()),
+    };
     let path = out.unwrap_or_else(|| PathBuf::from(format!("run-{run_id}-logs.zip")));
     tokio::fs::OpenOptions::new()
         .create(true)
@@ -926,5 +997,14 @@ mod tests {
         crate::App::try_parse_from(["fj", "actions", "logs", "--job", "4"]).unwrap();
         crate::App::try_parse_from(["fj", "actions", "logs", "--run", "#12", "--out", "x.zip"])
             .unwrap();
+    }
+
+    #[test]
+    fn unsupported_status_covers_missing_endpoints() {
+        assert!(is_unsupported_status(StatusCode::NOT_FOUND));
+        assert!(is_unsupported_status(StatusCode::METHOD_NOT_ALLOWED));
+        assert!(is_unsupported_status(StatusCode::NOT_IMPLEMENTED));
+        assert!(!is_unsupported_status(StatusCode::FORBIDDEN));
+        assert!(!is_unsupported_status(StatusCode::INTERNAL_SERVER_ERROR));
     }
 }
