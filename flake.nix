@@ -16,26 +16,37 @@
         pkgs = import nixpkgs { inherit system; };
       in
       rec {
-        packages.forgejo-cli = pkgs.rustPlatform.buildRustPackage {
+        packages.forgejo-cli = pkgs.stdenv.mkDerivation {
           pname = "forgejo-cli";
           version = "0.8.0-dev";
           src = pkgs.lib.cleanSource ./.;
 
-          cargoLock.lockFile = ./Cargo.lock;
-
           nativeBuildInputs = with pkgs; [
-            pkg-config
+            zig
             installShellFiles
           ];
-          buildInputs = with pkgs; [ openssl ];
 
-          postInstall = ''
+          dontConfigure = true;
+
+          env = {
+            BUILD_TYPE = "flake";
+          };
+
+          buildPhase = ''
+            runHook preBuild
+            export ZIG_GLOBAL_CACHE_DIR="$TMPDIR/zig-global-cache"
+            zig build -Doptimize=ReleaseSafe -Dbuild-type=flake --prefix $out
+            runHook postBuild
+          '';
+
+          installPhase = ''
+            runHook preInstall
             export HOME=$(mktemp -d)
             installShellCompletion --cmd fj \
               --bash <($out/bin/fj completion bash) \
               --fish <($out/bin/fj completion fish) \
-              --zsh <($out/bin/fj completion zsh) \
-              --nushell <($out/bin/fj completion nushell)
+              --zsh <($out/bin/fj completion zsh)
+            runHook postInstall
           '';
 
           meta = with pkgs.lib; {
@@ -46,26 +57,15 @@
               mit
             ];
           };
-
-          env = {
-            BUILD_TYPE = "flake";
-          };
         };
 
         packages.default = packages.forgejo-cli;
 
         devShells.default = pkgs.mkShell {
-          inputsFrom = [ packages.default ];
-
           nativeBuildInputs = with pkgs; [
-            cargo
-            rustc
-            rustfmt
-            clippy
+            zig
+            zls
           ];
-
-          # Required for rust-analyzer to work
-          RUST_SRC_PATH = "${pkgs.rustPlatform.rustcSrc}/library";
         };
       }
     );

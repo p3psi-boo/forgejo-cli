@@ -2,8 +2,12 @@ when:
   - event: manual
   - event: pull_request
 steps:
-  check:
-    image: rust
+  check-release:
+    image: debian:trixie-slim
     commands:
-      - rustup component add clippy
-      - cargo clippy
+      - apt-get update
+      - apt-get install -y --no-install-recommends ca-certificates wget xz-utils
+      - wget -q https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz
+      - tar -xf zig-x86_64-linux-0.17.0.tar.xz
+      - export PATH="$PWD/zig-x86_64-linux-0.17.0:$PATH"
+      - zig build -Doptimize=ReleaseSafe
