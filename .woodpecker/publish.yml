@@ -2,34 +2,48 @@ when:
   - event: tag
 steps:
   compile-linux-x86_64:
-    image: rust:latest
+    image: debian:trixie-slim
     environment:
       BUILD_TYPE: "release ci"
     commands:
-      - rustup target add x86_64-unknown-linux-gnu
-      - cargo build --target=x86_64-unknown-linux-gnu --release --features update-check
-      - strip target/x86_64-unknown-linux-gnu/release/fj
+      - apt-get update
+      - apt-get install -y --no-install-recommends ca-certificates wget xz-utils git
+      - wget -q https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz
+      - tar -xf zig-x86_64-linux-0.17.0.tar.xz
+      - export PATH="$PWD/zig-x86_64-linux-0.17.0:$PATH"
+      - zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux-gnu -Dbuild-type="release ci" --prefix ./prefix-x86_64-linux
+      - mkdir -p target/x86_64-unknown-linux-gnu/release
+      - cp prefix-x86_64-linux/bin/fj target/x86_64-unknown-linux-gnu/release/fj
+      - mkdir -p zig-out/bin
+      - cp prefix-x86_64-linux/bin/fj zig-out/bin/fj
+      - strip zig-out/bin/fj
   compile-linux-aarch64:
-    image: rust:latest
+    image: debian:trixie-slim
     environment:
       BUILD_TYPE: "release ci"
-      CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: "aarch64-linux-gnu-gcc"
     commands:
-      - rustup target add aarch64-unknown-linux-gnu
-      - apt update
-      - apt install gcc-aarch64-linux-gnu -y
-      - cargo build --target=aarch64-unknown-linux-gnu --release --features update-check,git2/vendored-openssl
+      - apt-get update
+      - apt-get install -y --no-install-recommends ca-certificates wget xz-utils git binutils-aarch64-linux-gnu
+      - wget -q https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz
+      - tar -xf zig-x86_64-linux-0.17.0.tar.xz
+      - export PATH="$PWD/zig-x86_64-linux-0.17.0:$PATH"
+      - zig build -Doptimize=ReleaseSafe -Dtarget=aarch64-linux-gnu -Dbuild-type="release ci" --prefix ./prefix-aarch64-linux
+      - mkdir -p target/aarch64-unknown-linux-gnu/release
+      - cp prefix-aarch64-linux/bin/fj target/aarch64-unknown-linux-gnu/release/fj
       - aarch64-linux-gnu-strip target/aarch64-unknown-linux-gnu/release/fj
   compile-windows:
-    image: rust:latest
+    image: debian:trixie-slim
     environment:
       BUILD_TYPE: "release ci"
     commands:
-      - rustup target add x86_64-pc-windows-gnu
-      - apt update
-      - apt install gcc-mingw-w64-x86-64 -y
-      - cargo build --target=x86_64-pc-windows-gnu --release --features update-check
-      - strip target/x86_64-pc-windows-gnu/release/fj.exe
+      - apt-get update
+      - apt-get install -y --no-install-recommends ca-certificates wget xz-utils git
+      - wget -q https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz
+      - tar -xf zig-x86_64-linux-0.17.0.tar.xz
+      - export PATH="$PWD/zig-x86_64-linux-0.17.0:$PATH"
+      - zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows-gnu -Dbuild-type="release ci" --prefix ./prefix-windows
+      - mkdir -p target/x86_64-pc-windows-gnu/release
+      - cp prefix-windows/bin/fj.exe target/x86_64-pc-windows-gnu/release/fj.exe
   create-archives:
     image: code.cartoon-aa.xyz/ci/alpine-zip:3.22
     commands:
@@ -61,4 +75,3 @@ steps:
       - fj release --repo $CI_REPO_URL asset create $CI_COMMIT_TAG forgejo-cli-x86_64-linux.tar.gz
       - fj release --repo $CI_REPO_URL asset create $CI_COMMIT_TAG forgejo-cli-aarch64-linux.tar.gz
       - fj auth logout $FORGE_HOST
-

@@ -1,0 +1,29 @@
+.{
+    .name = .forgejo_cli,
+    .version = "0.8.0-dev",
+    .fingerprint = 0xb82bc8a303625ded,
+    .minimum_zig_version = "0.17.0",
+    .dependencies = .{
+        .args = .{
+            .url = "https://github.com/muhammad-fiaz/args.zig/archive/refs/tags/0.0.9.tar.gz",
+            .hash = "args-0.0.9-8hzgbh4KCgB9UYVNvr6R_GmZgq7j1DpV2kGcqn3F36Q1",
+        },
+        .known_folders = .{
+            .url = "git+https://github.com/ziglibs/known-folders.git#c7a8a1974ccf8b5b022ee7f4b13fd734cdd89ae1",
+            .hash = "known_folders-0.0.0-Fy-PJiLLAABzqCdF6GWFmE36oCwioOh6Uxj4FF1Neanr",
+        },
+        .fluent = .{
+            .url = "git+https://github.com/jcollie/zig-fluent#981adc2b2ed71c367d819e25feee210151fe5344",
+            .hash = "fluent-0.2.0-N_WW8-YAcQBuEszr0QpoVeUU_drbXYTZhArGNF8ufz2r",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "localization",
+        "LICENSE-APACHE",
+        "LICENSE-MIT",
+        "README.md",
+    },
+}
