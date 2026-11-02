@@ -5,6 +5,7 @@ const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
 const style = @import("style.zig");
+const loc = @import("loc.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
     const remote = args.takeOpt("remote", 'R');
@@ -34,11 +35,11 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
     } else if (util.eql(sub, "follow")) {
         const user = args.expectPositional("USER");
         _ = try api.put("/user/following/{s}", .{user}, "");
-        std.debug.print("followed {s}\n", .{user});
+        app.say("msg-user-follow-success", &.{loc.str("username", user)});
     } else if (util.eql(sub, "unfollow")) {
         const user = args.expectPositional("USER");
         try api.delete("/user/following/{s}", .{user});
-        std.debug.print("unfollowed {s}\n", .{user});
+        app.say("msg-user-unfollow-success", &.{loc.str("username", user)});
     } else if (util.eql(sub, "following") or util.eql(sub, "followers")) {
         const user = args.takePositional();
         const login = if (user) |u| u else (api.parse(api_mod.User, try api.get("/user", .{})).login orelse util.fatal("not logged in", .{}));
@@ -51,11 +52,11 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
     } else if (util.eql(sub, "block")) {
         const user = args.expectPositional("USER");
         _ = try api.put("/user/blocks/{s}", .{user}, "");
-        std.debug.print("blocked {s}\n", .{user});
+        app.say("msg-user-block-success", &.{loc.str("user", user)});
     } else if (util.eql(sub, "unblock")) {
         const user = args.expectPositional("USER");
         try api.delete("/user/blocks/{s}", .{user});
-        std.debug.print("unblocked {s}\n", .{user});
+        app.say("msg-user-unblock-success", &.{loc.str("user", user)});
     } else if (util.eql(sub, "repos")) {
         const starred = args.takeFlag("starred", null);
         const sort = args.takeOpt("sort", null);
@@ -185,7 +186,7 @@ fn keys(app: *App, args: *cli.ArgList, api: *api_mod.Api) !void {
     } else if (util.eql(sub, "delete")) {
         const id = args.expectPositional("ID");
         try api.delete("/user/keys/{s}", .{id});
-        std.debug.print("deleted key {s}\n", .{id});
+        app.say("msg-user-key-delete-success", &.{loc.str("id", id)});
     } else if (util.eql(sub, "upload")) {
         const title = args.takeOpt("title", 't');
         const read_only = args.takeFlag("read-only", null);
@@ -197,7 +198,7 @@ fn keys(app: *App, args: *cli.ArgList, api: *api_mod.Api) !void {
             .read_only = read_only,
         });
         _ = try api.post("/user/keys", .{}, payload);
-        std.debug.print("uploaded key\n", .{});
+        app.say("msg-user-key-add-success", &.{});
     } else util.fatal("unknown key command: {s}", .{sub});
 }
 

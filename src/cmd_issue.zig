@@ -5,11 +5,12 @@ const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
 const style = @import("style.zig");
+const loc = @import("loc.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
     const remote = args.takeOpt("remote", 'R');
     const sub = args.takePositional() orelse {
-        cli.help("issue");
+        cli.help(app.arena, "issue");
         return;
     };
     if (util.eql(sub, "create")) {
@@ -78,17 +79,19 @@ fn create(app: *App, args: *cli.ArgList, remote: ?[]const u8) !void {
         .milestone = milestone_id,
     });
     const issue = api.parse(api_mod.Issue, try api.post("/repos/{s}/{s}/issues", .{ name.owner, name.name }, payload));
-    std.debug.print("created #{d} {s}\n", .{ issue.number orelse 0, issue.html_url orelse "" });
+    app.say("msg-issue-create-success", &.{
+        loc.num("number", issue.number orelse 0),
+        loc.str("title", issue.title orelse title),
+    });
 }
 
 pub fn lookupMilestone(app: *App, api: *api_mod.Api, name: git_mod.RepoName, title: []const u8) !i64 {
-    _ = app;
     if (util.parseI64(title)) |n| return n;
     const all = api.parse([]api_mod.Milestone, try api.getQuery("/repos/{s}/{s}/milestones", .{ name.owner, name.name }, "?state=all"));
     for (all) |m| {
         if (m.title) |t| if (util.eql(t, title)) return m.id orelse util.fatal("milestone has no id", .{});
     }
-    util.fatal("milestone not found: {s}", .{title});
+    app.die("msg-milestone-not_found", &.{});
 }
 
 fn view(app: *App, args: *cli.ArgList, remote: ?[]const u8) !void {
@@ -225,8 +228,11 @@ fn closeIssue(app: *App, args: *cli.ArgList, remote: ?[]const u8) !void {
         }
     }
     const payload = try util.jsonStringify(app.arena, .{ .state = "closed" });
-    _ = try api.patch("/repos/{s}/{s}/issues/{d}", .{ name.owner, name.name, id.number }, payload);
-    std.debug.print("closed #{d}\n", .{id.number});
+    const closed = api.parse(api_mod.Issue, try api.patch("/repos/{s}/{s}/issues/{d}", .{ name.owner, name.name, id.number }, payload));
+    app.say("msg-issue-close-success", &.{
+        loc.num("number", id.number),
+        loc.str("title", closed.title orelse ""),
+    });
 }
 
 fn assign(app: *App, args: *cli.ArgList, remote: ?[]const u8, add: bool) !void {

@@ -252,11 +252,11 @@ pub fn getCurrent(
         if (repo_url) |u| break :blk u;
         if (repo_name != null) {
             break :blk host_url orelse remote_url orelse fallbackHost(app) orelse
-                util.fatal("can't figure out the host; try --host", .{});
+                app.die("msg-repo-no_host_given", &.{});
         }
         if (remote_flag != null or host_url == null or hostsEqual(remote_url, host_url)) {
             break :blk remote_url orelse host_url orelse fallbackHost(app) orelse
-                util.fatal("can't figure out the host; try --host", .{});
+                app.die("msg-repo-no_host_given", &.{});
         }
         break :blk host_url.?;
     };
@@ -290,7 +290,7 @@ fn hostsEqual(a: ?[]const u8, b: ?[]const u8) bool {
 fn fallbackHost(app: *App) ?[]const u8 {
     const env = app.environ.get("FJ_FALLBACK_HOST") orelse return null;
     return normalizeHost(app, env) catch {
-        std.debug.print("FJ_FALLBACK_HOST is not a valid URL\n", .{});
+        app.say("msg-repo-fallback_host-invalid_url", &.{});
         return null;
     };
 }
@@ -310,7 +310,7 @@ pub fn normalizeHost(app: *App, host: []const u8) ![]const u8 {
 }
 
 pub fn requireName(info: RepoInfo) RepoName {
-    return info.name orelse util.fatal("can't figure what repo to access, try specifying with --repo", .{});
+    return info.name orelse util.fatal("couldn't get repo name, please specify", .{});
 }
 
 test "parse repo arg" {

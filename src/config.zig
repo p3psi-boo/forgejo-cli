@@ -1,4 +1,5 @@
 const std = @import("std");
+const known_folders = @import("known-folders");
 const App = @import("app.zig").App;
 const util = @import("util.zig");
 
@@ -127,12 +128,17 @@ pub const KeyInfo = struct {
     }
 };
 
-pub fn dataDir(app: *App) ![]u8 {
-    if (app.environ.get("XDG_DATA_HOME")) |xdg| {
-        return std.fs.path.join(app.arena, &.{ xdg, "forgejo-cli" });
+fn joinAppDir(app: *App, folder: known_folders.KnownFolder) ![]u8 {
+    const base = known_folders.getPath(app.io, app.gpa, app.environ, folder) catch null;
+    if (base) |p| {
+        defer app.gpa.free(p);
+        return std.fs.path.join(app.arena, &.{ p, "forgejo-cli" });
     }
-    const home = app.environ.get("HOME") orelse util.fatal("HOME is not set", .{});
-    return std.fs.path.join(app.arena, &.{ home, ".local", "share", "forgejo-cli" });
+    app.die("msg-project-dir-not-found", &.{});
+}
+
+pub fn dataDir(app: *App) ![]u8 {
+    return joinAppDir(app, .data);
 }
 
 pub fn keysPath(app: *App) ![]u8 {
@@ -140,11 +146,7 @@ pub fn keysPath(app: *App) ![]u8 {
 }
 
 pub fn configDir(app: *App) ![]u8 {
-    if (app.environ.get("XDG_CONFIG_HOME")) |xdg| {
-        return std.fs.path.join(app.arena, &.{ xdg, "forgejo-cli" });
-    }
-    const home = app.environ.get("HOME") orelse util.fatal("HOME is not set", .{});
-    return std.fs.path.join(app.arena, &.{ home, ".config", "forgejo-cli" });
+    return joinAppDir(app, .local_configuration);
 }
 
 pub fn builtinClientId(host: []const u8) ?[]const u8 {

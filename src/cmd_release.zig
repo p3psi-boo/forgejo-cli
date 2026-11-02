@@ -5,6 +5,7 @@ const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
 const style = @import("style.zig");
+const loc = @import("loc.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
     const remote = args.takeOpt("remote", 'R');
@@ -39,7 +40,7 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
         });
         _ = create_tag;
         const rel = api.parse(api_mod.Release, try api.post("/repos/{s}/{s}/releases", .{ name.owner, name.name }, payload));
-        std.debug.print("created {s}\n", .{rel.html_url orelse rname});
+        app.say("msg-release-create-success", &.{loc.str("name", rel.name orelse rname)});
         const id = rel.id orelse return;
         for (attach) |path| try uploadAsset(app, &api, name, id, path, null);
     } else if (util.eql(sub, "edit")) {
@@ -118,7 +119,10 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
             const rel = try findRelease(&api, name, release, false);
             const id = try findAsset(rel, asset);
             try api.delete("/repos/{s}/{s}/releases/assets/{d}", .{ name.owner, name.name, id });
-            std.debug.print("deleted asset {s}\n", .{asset});
+            app.say("msg-release-asset-delete-success", &.{
+                loc.str("asset", asset),
+                loc.str("release", release),
+            });
         } else if (util.eql(asub, "download")) {
             const output = args.takeOpt("output", 'o');
             const release = args.expectPositional("RELEASE");
@@ -177,5 +181,8 @@ fn uploadAsset(app: *App, api: *api_mod.Api, name: git_mod.RepoName, release_id:
         fname,
         data,
     );
-    std.debug.print("attached {s}\n", .{fname});
+    app.say("msg-release-asset-create-success", &.{
+        loc.str("asset", fname),
+        loc.str("release", ""),
+    });
 }

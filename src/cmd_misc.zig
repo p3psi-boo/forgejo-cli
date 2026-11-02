@@ -6,6 +6,7 @@ const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
 const style = @import("style.zig");
+const loc = @import("loc.zig");
 const cmd_issue = @import("cmd_issue.zig");
 
 pub fn whoami(app: *App, args: *cli.ArgList) !void {
@@ -14,7 +15,10 @@ pub fn whoami(app: *App, args: *cli.ArgList) !void {
     const info = try git_mod.getCurrent(app, app.host_flag, null, remote);
     var api = app.apiFor(info.url);
     const me = api.parse(api_mod.User, try api.get("/user", .{}));
-    std.debug.print("currently signed into {s}@{s}\n", .{ me.login orelse "?", git_mod.hostName(info.url) });
+    app.say("msg-whoami", &.{
+        loc.str("name", me.login orelse "?"),
+        loc.str("host", git_mod.hostName(info.url)),
+    });
 }
 
 pub fn version(app: *App, args: *cli.ArgList) !void {
@@ -31,46 +35,30 @@ pub fn version(app: *App, args: *cli.ArgList) !void {
         var api = api_mod.Api.init(app, "https://codeberg.org", null);
         const rel = api.parse(api_mod.Release, try api.get("/repos/forgejo-contrib/forgejo-cli/releases/latest", .{}));
         const latest_tag = rel.tag_name orelse "?";
-        std.debug.print("latest: {s}\n", .{latest_tag});
+        if (util.eql(latest_tag, build_options.version) or util.eql(latest_tag, try std.fmt.allocPrint(app.arena, "v{s}", .{build_options.version}))) {
+            app.say("msg-version-update_check-current", &.{});
+        } else {
+            app.say("msg-version-update_check-behind", &.{
+                loc.str("new_version", latest_tag),
+                loc.str("url", rel.html_url orelse "https://codeberg.org/forgejo-contrib/forgejo-cli/releases"),
+            });
+        }
     }
 }
 
 pub fn completion(app: *App, args: *cli.ArgList) !void {
-    _ = app;
     const bin = args.takeOpt("bin-name", null) orelse "fj";
     const shell = args.expectPositional("SHELL");
     args.rejectUnknownFlags();
-    if (util.eql(shell, "bash")) {
-        std.debug.print(
-            \\_{s}() {{
-            \\  local cur prev
-            \\  COMPREPLY=()
-            \\  cur="${{COMP_WORDS[COMP_CWORD]}}"
-            \\  local cmds="repo issue pr milestone wiki actions whoami auth release tag user org version completion"
-            \\  if [[ $COMP_CWORD -eq 1 ]]; then
-            \\    COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
-            \\  fi
-            \\}}
-            \\complete -F _{s} {s}
-            \\
-        , .{ bin, bin, bin });
-    } else if (util.eql(shell, "zsh")) {
-        std.debug.print(
-            \\#compdef {s}
-            \\_arguments "1:command:(repo issue pr milestone wiki actions whoami auth release tag user org version completion)"
-            \\
-        , .{bin});
-    } else if (util.eql(shell, "fish")) {
-        std.debug.print(
-            \\complete -c {s} -f
-            \\complete -c {s} -n "__fish_use_subcommand" -a "repo issue pr milestone wiki actions whoami auth release tag user org version completion"
-            \\
-        , .{ bin, bin });
-    } else if (util.eql(shell, "elvish") or util.eql(shell, "powershell") or util.eql(shell, "nushell")) {
-        std.debug.print("# completions for {s} ({s})\n", .{ bin, shell });
-    } else {
-        util.fatal("unknown shell: {s} (bash|zsh|fish|elvish|powershell|nushell)", .{shell});
+    if (util.eql(shell, "elvish")) {
+        std.debug.print("# completions for {s} (elvish)\n", .{bin});
+        return;
     }
+    const script = cli.completionScript(app.arena, shell, bin) catch |err| switch (err) {
+        error.UnknownShell => util.fatal("unknown shell: {s} (bash|zsh|fish|elvish|powershell|nushell)", .{shell}),
+        else => return err,
+    };
+    std.debug.print("{s}", .{script});
 }
 
 pub fn milestone(app: *App, args: *cli.ArgList) !void {
@@ -134,7 +122,7 @@ pub fn milestone(app: *App, args: *cli.ArgList) !void {
         args.rejectUnknownFlags();
         const id = try cmd_issue.lookupMilestone(app, &api, name, title);
         try api.delete("/repos/{s}/{s}/milestones/{d}", .{ name.owner, name.name, id });
-        std.debug.print("deleted milestone {s}\n", .{title});
+        app.say("msg-milestone-deleted", &.{});
     } else {
         util.fatal("unknown milestone command: {s}", .{sub});
     }
@@ -173,6 +161,10 @@ pub fn wiki(app: *App, args: *cli.ArgList) !void {
         clone_url = try std.fmt.allocPrint(app.arena, "{s}.wiki.git", .{util.stripSuffix(util.stripSuffix(clone_url, ".git"), "/")});
         const dest = path orelse try std.fmt.allocPrint(app.arena, "{s}.wiki", .{name.name});
         try app.git.forward(&.{ "git", "clone", clone_url, dest });
+        app.say("msg-wiki-clone-success", &.{
+            loc.str("repo", name.name),
+            loc.str("path", dest),
+        });
     } else if (util.eql(sub, "browse")) {
         const page = args.expectPositional("PAGE");
         args.rejectUnknownFlags();
@@ -206,12 +198,12 @@ pub fn tag(app: *App, args: *cli.ArgList) !void {
             .target = branch,
         });
         _ = try api.post("/repos/{s}/{s}/tags", .{ name.owner, name.name }, payload);
-        std.debug.print("created tag {s}\n", .{tname});
+        app.say("msg-tag-create-success", &.{loc.str("name", tname)});
     } else if (util.eql(sub, "delete")) {
         const tname = args.expectPositional("NAME");
         args.rejectUnknownFlags();
         try api.delete("/repos/{s}/{s}/tags/{s}", .{ name.owner, name.name, tname });
-        std.debug.print("deleted tag {s}\n", .{tname});
+        app.say("msg-tag-delete-success", &.{loc.str("name", tname)});
     } else if (util.eql(sub, "list")) {
         const page = util.parseU32(args.takeOpt("page", 'p') orelse "1") orelse 1;
         args.rejectUnknownFlags();

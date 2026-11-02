@@ -5,10 +5,11 @@ const util = @import("util.zig");
 const config = @import("config.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
+const loc = @import("loc.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
     const sub = args.takePositional() orelse {
-        cli.help("auth");
+        cli.help(app.arena, "auth");
         return;
     };
     if (util.eql(sub, "login")) {
@@ -18,9 +19,9 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
         args.rejectUnknownFlags();
         if (app.keys.hosts.swapRemove(host)) {
             try app.keys.save(app);
-            std.debug.print("signed out of {s}\n", .{host});
+            app.say("msg-auth_logout-success", &.{loc.str("host", host)});
         } else {
-            std.debug.print("already not signed in to {s}\n", .{host});
+            app.say("msg-auth_logout-already_signed_out", &.{loc.str("host", host)});
         }
     } else if (util.eql(sub, "add-token") or util.eql(sub, "add-key")) {
         try addToken(app, args);
@@ -29,7 +30,7 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
     } else if (util.eql(sub, "list")) {
         args.rejectUnknownFlags();
         if (app.keys.hosts.count() == 0) {
-            std.debug.print("No logins.\n", .{});
+            app.say("msg-auth-list-none", &.{});
             return;
         }
         var it = app.keys.hosts.iterator();
@@ -44,13 +45,13 @@ fn addToken(app: *App, args: *cli.ArgList) !void {
     var token = args.takePositional();
     args.rejectUnknownFlags();
     if (token == null) {
-        token = try util.promptLine(app, "new key: ");
+        token = try util.promptLine(app, app.t("msg-auth-add_token-prompt", &.{}));
     }
     const t = util.trim(token.?);
     if (t.len == 0) util.fatal("empty token", .{});
     const host = git_mod.hostName(info.url);
     if (app.keys.hosts.contains(host)) {
-        util.fatal("key for {s} already exists", .{host});
+        app.die("msg-auth-add_token-already_exists", &.{loc.str("host", host)});
     }
     try app.keys.hosts.put(app.arena, try app.arena.dupe(u8, host), .{
         .kind = .Application,
@@ -68,24 +69,24 @@ fn useSsh(app: *App, args: *cli.ArgList) !void {
     args.rejectUnknownFlags();
     const host = git_mod.hostName(info.url);
     if (!app.keys.hosts.contains(host)) {
-        util.fatal("not logged in to {s}", .{host});
+        app.die("msg-auth-use_ssh-not_logged_in", &.{loc.str("host", host)});
     }
     if (enable) {
         const gop = try app.keys.default_ssh.getOrPut(app.arena, host);
         if (gop.found_existing) {
-            std.debug.print("already using SSH for {s} by default\n", .{host});
+            app.say("msg-auth-use_ssh-already_enabled", &.{loc.str("host", host)});
         } else {
             gop.key_ptr.* = try app.arena.dupe(u8, host);
             gop.value_ptr.* = {};
             try app.keys.save(app);
-            std.debug.print("now will use SSH for {s} by default\n", .{host});
+            app.say("msg-auth-use_ssh-enabled", &.{loc.str("host", host)});
         }
     } else {
         if (app.keys.default_ssh.swapRemove(host)) {
             try app.keys.save(app);
-            std.debug.print("will no longer use SSH for {s} by default\n", .{host});
+            app.say("msg-auth-use_ssh-disabled", &.{loc.str("host", host)});
         } else {
-            std.debug.print("already not using SSH for {s} by default\n", .{host});
+            app.say("msg-auth-use_ssh-already_disabled", &.{loc.str("host", host)});
         }
     }
 }
@@ -95,13 +96,10 @@ fn login(app: *App, args: *cli.ArgList) !void {
     const info = try git_mod.getCurrent(app, app.host_flag, null, null);
     const host = git_mod.hostName(info.url);
     const client_id = try config.clientIdFor(app, host) orelse {
-        std.debug.print(
-            \\Your installation of fj doesn't support `login` for {s}
-            \\
-            \\Please visit https://{s}/user/settings/applications
-            \\to create a token, and use it to log in with `fj auth add-token`
-            \\
-        , .{ host, host });
+        app.say("msg-auth-login-oauth_unsupported", &.{
+            loc.str("host_domain", host),
+            loc.str("applications_url", try std.fmt.allocPrint(app.arena, "https://{s}/user/settings/applications", .{host})),
+        });
         return;
     };
 
@@ -120,7 +118,7 @@ fn login(app: *App, args: *cli.ArgList) !void {
     try util.openUrl(app, auth_url);
 
     const code = try waitForOAuthCode(app, state) orelse {
-        std.debug.print("Login canceled\n", .{});
+        app.say("msg-auth-login-canceled", &.{});
         return;
     };
 

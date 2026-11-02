@@ -11,6 +11,19 @@ pub fn build(b: *std.Build) void {
     options.addOption([]const u8, "repository", "https://codeberg.org/forgejo-contrib/forgejo-cli/");
     options.addOption([]const u8, "build_type", b.option([]const u8, "build-type", "Build type label") orelse "from source");
 
+    const args_dep = b.dependency("args", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const known_folders_dep = b.dependency("known_folders", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const fluent_dep = b.dependency("fluent", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     const exe = b.addExecutable(.{
         .name = "fj",
         .root_module = b.createModule(.{
@@ -19,7 +32,15 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    const ftl = b.createModule(.{
+        .root_source_file = b.path("localization/embed.zig"),
+    });
+
     exe.root_module.addOptions("build_options", options);
+    exe.root_module.addImport("args", args_dep.module("args"));
+    exe.root_module.addImport("known-folders", known_folders_dep.module("known-folders"));
+    exe.root_module.addImport("fluent", fluent_dep.module("fluent"));
+    exe.root_module.addImport("ftl", ftl);
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Run fj");

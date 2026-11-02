@@ -5,10 +5,11 @@ const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
 const style = @import("style.zig");
+const loc = @import("loc.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
     const sub = args.takePositional() orelse {
-        cli.help("repo");
+        cli.help(app.arena, "repo");
         return;
     };
     if (util.eql(sub, "create")) {
@@ -93,7 +94,7 @@ pub fn create(app: *App, args: *cli.ArgList, org: ?[]const u8) !void {
     else
         try api.post("/user/repos", .{}, body);
     const repo = api.parse(api_mod.Repository, resp);
-    std.debug.print("created {s}\n", .{repo.html_url orelse name});
+    app.say("msg-repo-create-success", &.{loc.str("url", repo.html_url orelse name)});
 
     if (remote != null or push) {
         const upstream = remote orelse "origin";
@@ -103,7 +104,7 @@ pub fn create(app: *App, args: *cli.ArgList, org: ?[]const u8) !void {
             util.fatal("failed to add remote: {t}", .{err});
         };
         if (push) {
-            const branch = try app.git.currentBranch() orelse util.fatal("detached HEAD", .{});
+            const branch = try app.git.currentBranch() orelse app.die("msg-repo-create-detached_head", &.{});
             const spec = try std.fmt.allocPrint(app.arena, "HEAD:refs/heads/{s}", .{branch});
             try app.git.forward(&.{ "git", "push", "-u", upstream, spec });
         }
@@ -120,7 +121,11 @@ fn fork(app: *App, args: *cli.ArgList) !void {
     const body = try util.jsonStringify(app.arena, .{ .name = new_name });
     const resp = try api.post("/repos/{s}/{s}/forks", .{ repo.owner, repo.name }, body);
     const created = api.parse(api_mod.Repository, resp);
-    std.debug.print("forked {s}/{s} -> {s}\n", .{ repo.owner, repo.name, created.full_name orelse "?" });
+    app.say("msg-repo-fork-success", &.{
+        loc.str("parent_owner", repo.owner),
+        loc.str("parent_name", repo.name),
+        loc.str("fork_name", created.full_name orelse "?"),
+    });
 }
 
 fn migrate(app: *App, args: *cli.ArgList) !void {
@@ -149,7 +154,7 @@ fn migrate(app: *App, args: *cli.ArgList) !void {
     });
     const resp = try api.post("/repos/migrate", .{}, body);
     const repo = api.parse(api_mod.Repository, resp);
-    std.debug.print("migrated {s}\n", .{repo.html_url orelse repo_name});
+    app.say("msg-repo-migrate-success", &.{loc.str("url", repo.html_url orelse repo_name)});
 }
 
 fn view(app: *App, args: *cli.ArgList) !void {
@@ -249,10 +254,10 @@ fn star(app: *App, args: *cli.ArgList, add: bool) !void {
     var api = app.apiFor(info.url);
     if (add) {
         _ = try api.put("/user/starred/{s}/{s}", .{ name.owner, name.name }, "");
-        std.debug.print("starred {s}/{s}\n", .{ name.owner, name.name });
+        app.say("msg-repo-star-success", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
     } else {
         try api.delete("/user/starred/{s}/{s}", .{ name.owner, name.name });
-        std.debug.print("unstarred {s}/{s}\n", .{ name.owner, name.name });
+        app.say("msg-repo-unstar-success", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
     }
 }
 
@@ -270,10 +275,10 @@ fn starStatus(app: *App, args: *cli.ArgList) !void {
     const info = try git_mod.getCurrent(app, app.host_flag, repo_arg, remote);
     const name = git_mod.requireName(info);
     _ = api.get("/user/starred/{s}/{s}", .{ name.owner, name.name }) catch {
-        std.debug.print("not starred\n", .{});
+        app.say("msg-repo-star_status-unstarred", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
         return;
     };
-    std.debug.print("starred\n", .{});
+    app.say("msg-repo-star_status-starred", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
 }
 
 fn watch(app: *App, args: *cli.ArgList, add: bool) !void {
@@ -285,10 +290,10 @@ fn watch(app: *App, args: *cli.ArgList, add: bool) !void {
     var api = app.apiFor(info.url);
     if (add) {
         _ = try api.put("/repos/{s}/{s}/subscription", .{ name.owner, name.name }, "");
-        std.debug.print("watching {s}/{s}\n", .{ name.owner, name.name });
+        app.say("msg-repo-watch-success", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
     } else {
         try api.delete("/repos/{s}/{s}/subscription", .{ name.owner, name.name });
-        std.debug.print("unwatched {s}/{s}\n", .{ name.owner, name.name });
+        app.say("msg-repo-unwatch-success", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
     }
 }
 
@@ -306,23 +311,26 @@ fn watchStatus(app: *App, args: *cli.ArgList) !void {
     const info = try git_mod.getCurrent(app, app.host_flag, repo_arg, remote);
     const name = git_mod.requireName(info);
     _ = api.get("/repos/{s}/{s}/subscription", .{ name.owner, name.name }) catch {
-        std.debug.print("not watching\n", .{});
+        app.say("msg-repo-watch_status-unsubscribed", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
         return;
     };
-    std.debug.print("watching\n", .{});
+    app.say("msg-repo-watch_status-subscribed", &.{ loc.str("owner", name.owner), loc.str("repo", name.name) });
 }
 
 fn deleteRepo(app: *App, args: *cli.ArgList) !void {
     const repo = git_mod.RepoName.parseArg(args.expectPositional("REPO"));
     args.rejectUnknownFlags();
     const info = try git_mod.getCurrent(app, app.host_flag, repo, null);
-    if (!try util.promptBool(app, try std.fmt.allocPrint(app.arena, "delete {s}/{s}?", .{ repo.owner, repo.name }), false)) {
-        std.debug.print("cancelled\n", .{});
+    if (!try util.promptBool(app, app.t("msg-repo-delete-confirmation_prompt", &.{
+        loc.str("owner", repo.owner),
+        loc.str("name", repo.name),
+    }), false)) {
+        app.say("msg-repo-delete-cancelled", &.{});
         return;
     }
     var api = app.apiFor(info.url);
     try api.delete("/repos/{s}/{s}", .{ repo.owner, repo.name });
-    std.debug.print("deleted {s}/{s}\n", .{ repo.owner, repo.name });
+    app.say("msg-repo-delete-success", &.{ loc.str("owner", repo.owner), loc.str("repo", repo.name) });
 }
 
 fn browse(app: *App, args: *cli.ArgList) !void {
@@ -367,12 +375,12 @@ fn labels(app: *App, args: *cli.ArgList) !void {
             .is_archived = archived,
         });
         const created = api.parse(api_mod.Label, try api.post("/repos/{s}/{s}/labels", .{ name.owner, name.name }, body));
-        std.debug.print("created label {s}\n", .{created.name orelse lname});
+        app.say("msg-repo-label-create-success", &.{loc.str("label", created.name orelse lname)});
     } else if (util.eql(sub, "delete")) {
         const id = args.expectPositional("ID");
         args.rejectUnknownFlags();
         try api.delete("/repos/{s}/{s}/labels/{s}", .{ name.owner, name.name, id });
-        std.debug.print("deleted label {s}\n", .{id});
+        app.say("msg-repo-label-delete-success", &.{loc.str("label", id)});
     } else if (util.eql(sub, "edit")) {
         const new_name = args.takeOpt("name", 'n');
         const color = args.takeOpt("color", 'c');
@@ -389,7 +397,7 @@ fn labels(app: *App, args: *cli.ArgList) !void {
             .is_archived = archived,
         });
         _ = try api.patch("/repos/{s}/{s}/labels/{s}", .{ name.owner, name.name, id }, body);
-        std.debug.print("updated label {s}\n", .{id});
+        app.say("msg-repo-label-edit-success", &.{loc.str("label", id)});
     } else {
         util.fatal("unknown labels command: {s}", .{sub});
     }

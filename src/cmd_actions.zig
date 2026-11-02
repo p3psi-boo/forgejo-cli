@@ -4,6 +4,7 @@ const cli = @import("cli.zig");
 const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
+const loc = @import("loc.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
     const remote = args.takeOpt("remote", 'R');
@@ -43,7 +44,11 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
             .inputs = std.json.Value{ .object = obj },
         });
         _ = try api.post("/repos/{s}/{s}/actions/workflows/{s}/dispatches", .{ name.owner, name.name, wname }, payload);
-        std.debug.print("dispatched workflow {s} on {s}\n", .{ wname, ref });
+        app.say("msg-actions-dispatch-success", &.{
+            loc.str("name", wname),
+            loc.str("ref", ref),
+            loc.num("n_inputs", inputs.len),
+        });
     } else if (util.eql(sub, "view")) {
         const job = args.takeOpt("job", 'j');
         const logs = args.takeFlag("logs", null);
@@ -140,7 +145,7 @@ fn variables(app: *App, args: *cli.ArgList, api: *api_mod.Api, name: git_mod.Rep
         const vname = args.expectPositional("NAME");
         args.rejectUnknownFlags();
         try api.delete("/repos/{s}/{s}/actions/variables/{s}", .{ name.owner, name.name, vname });
-        std.debug.print("Variable {s} deleted.\n", .{vname});
+        app.say("msg-actions-variable-delete-success", &.{loc.str("name", vname)});
     } else util.fatal("unknown variables command: {s}", .{sub});
 }
 

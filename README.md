@@ -41,7 +41,7 @@ Run unit tests with `zig build test`.
 
 Existing `~/.local/share/forgejo-cli/keys.json` logins (application tokens and OAuth) remain compatible.
 
-The CLI currently prints English strings. Fluent translation files under `localization/` are kept for a future i18n port.
+User-facing messages are loaded from Fluent files under `localization/` (locale from `LANG`/`LC_MESSAGES`). CLI parsing, `--help`, and `fj completion` use [args.zig](https://github.com/muhammad-fiaz/args.zig); config/data directories use [known-folders](https://github.com/ziglibs/known-folders).
 
 ### Installation
 

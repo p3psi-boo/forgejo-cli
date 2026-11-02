@@ -5,6 +5,7 @@ const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
 const style = @import("style.zig");
+const loc = @import("loc.zig");
 const cmd_repo = @import("cmd_repo.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
@@ -24,7 +25,7 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
             try qs.addInt("page", page);
             break :blk api.parse([]api_mod.Organization, try api.getQuery("/orgs", .{}, qs.slice()));
         };
-        if (orgs.len == 0) std.debug.print("no organizations\n", .{});
+        if (orgs.len == 0) app.say("msg-org-list-no_results", &.{});
         for (orgs) |o| {
             std.debug.print("{s} {s}{s}{s}\n", .{ app.render.bullet, app.render.bold, o.username orelse o.name orelse "?", app.render.reset });
         }
@@ -51,7 +52,11 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
             .visibility = visibility,
         });
         const org = api.parse(api_mod.Organization, try api.post("/orgs", .{}, payload));
-        std.debug.print("created organization {s}\n", .{org.username orelse oname});
+        app.say("msg-org-create-success", &.{
+            loc.str("name", org.username orelse oname),
+            loc.opt("full_name", full_name),
+            loc.str("visibility", visibility orelse "public"),
+        });
     } else if (util.eql(sub, "edit")) {
         const full_name = args.takeOpt("full-name", 'f');
         const description = args.takeOpt("description", 'd');
@@ -97,13 +102,17 @@ pub fn run(app: *App, args: *cli.ArgList) !void {
             } else {
                 try api.delete("/orgs/{s}/public_members/{s}", .{ oname, login });
             }
-            std.debug.print("set visibility to {s}\n", .{v});
+            if (util.eql(v, "public")) {
+                app.say("msg-org-visibility-set_public", &.{loc.str("org_name", oname)});
+            } else {
+                app.say("msg-org-visibility-set_private", &.{loc.str("org_name", oname)});
+            }
         } else {
             _ = api.get("/orgs/{s}/public_members/{s}", .{ oname, login }) catch {
-                std.debug.print("private member of {s}\n", .{oname});
+                app.say("msg-org-visibility-private", &.{loc.str("org_name", oname)});
                 return;
             };
-            std.debug.print("public member of {s}\n", .{oname});
+            app.say("msg-org-visibility-public", &.{loc.str("org_name", oname)});
         }
     } else if (util.eql(sub, "team")) {
         try team(app, args, &api);
@@ -171,7 +180,11 @@ fn team(app: *App, args: *cli.ArgList, api: *api_mod.Api) !void {
             .permission = "read",
         });
         const t = api.parse(api_mod.Team, try api.post("/orgs/{s}/teams", .{org}, payload));
-        std.debug.print("created team {s}\n", .{t.name orelse tname});
+        app.say("msg-org-team-create-success", &.{
+            loc.str("name", t.name orelse tname),
+            loc.str("org", org),
+            loc.flag("admin", false),
+        });
     } else if (util.eql(sub, "edit")) {
         const new_name = args.takeOpt("new-name", 'n');
         const description = args.takeOpt("description", 'd');
@@ -251,7 +264,7 @@ fn label(app: *App, args: *cli.ArgList, api: *api_mod.Api) !void {
             .exclusive = exclusive,
         });
         _ = try api.post("/orgs/{s}/labels", .{org}, payload);
-        std.debug.print("created label {s}\n", .{lname});
+        app.say("msg-org-label-add-success", &.{loc.str("label", lname)});
     } else if (util.eql(sub, "edit")) {
         const new_name = args.takeOpt("new-name", 'n');
         const color = args.takeOpt("color", 'c');
@@ -272,6 +285,10 @@ fn label(app: *App, args: *cli.ArgList, api: *api_mod.Api) !void {
             .description = description,
         });
         _ = try api.patch("/orgs/{s}/labels/{d}", .{ org, id }, payload);
+        app.say("msg-org-label-edit-success", &.{
+            loc.str("old_label", lname),
+            loc.str("label", new_name orelse lname),
+        });
     } else if (util.eql(sub, "rm")) {
         const org = args.expectPositional("ORG");
         const lname = args.expectPositional("LABEL");
@@ -284,7 +301,7 @@ fn label(app: *App, args: *cli.ArgList, api: *api_mod.Api) !void {
         }
         if (id == 0) util.fatal("label not found", .{});
         try api.delete("/orgs/{s}/labels/{d}", .{ org, id });
-        std.debug.print("deleted label {s}\n", .{lname});
+        app.say("msg-org-label-remove-success", &.{loc.str("label", lname)});
     } else util.fatal("unknown org label command: {s}", .{sub});
 }
 

@@ -5,12 +5,13 @@ const util = @import("util.zig");
 const git_mod = @import("git.zig");
 const api_mod = @import("api.zig");
 const style = @import("style.zig");
+const loc = @import("loc.zig");
 const cmd_issue = @import("cmd_issue.zig");
 
 pub fn run(app: *App, args: *cli.ArgList) !void {
     const remote = args.takeOpt("remote", 'R');
     const sub = args.takePositional() orelse {
-        cli.help("pr");
+        cli.help(app.arena, "pr");
         return;
     };
     if (util.eql(sub, "search")) {
@@ -135,7 +136,10 @@ fn create(app: *App, args: *cli.ArgList, remote: ?[]const u8) !void {
         .milestone = milestone_id,
     });
     const pr = api.parse(api_mod.PullRequest, try api.post("/repos/{s}/{s}/pulls", .{ name.owner, name.name }, payload));
-    std.debug.print("created #{d} {s}\n", .{ pr.number orelse 0, pr.html_url orelse "" });
+    app.say("msg-pr-create-success", &.{
+        loc.num("number", pr.number orelse 0),
+        loc.str("title", pr.title orelse title),
+    });
 }
 
 fn view(app: *App, args: *cli.ArgList, remote: ?[]const u8) !void {
@@ -347,7 +351,12 @@ fn merge(app: *App, args: *cli.ArgList, remote: ?[]const u8) !void {
         .delete_branch_after_merge = delete,
     });
     _ = try ctx[2].post("/repos/{s}/{s}/pulls/{d}/merge", .{ ctx[1].owner, ctx[1].name, ctx[3] }, payload);
-    std.debug.print("merged #{d}\n", .{ctx[3]});
+    const merged = ctx[2].parse(api_mod.PullRequest, try ctx[2].get("/repos/{s}/{s}/pulls/{d}", .{ ctx[1].owner, ctx[1].name, ctx[3] }));
+    app.say("msg-pr-merge-success", &.{
+        loc.num("number", ctx[3]),
+        loc.str("title", merged.title orelse ""),
+        loc.str("base_branch", if (merged.base) |b| b.ref orelse "" else ""),
+    });
 }
 
 fn browse(app: *App, args: *cli.ArgList, remote: ?[]const u8) !void {

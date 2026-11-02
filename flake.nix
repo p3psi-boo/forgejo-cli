@@ -23,6 +23,7 @@
 
           nativeBuildInputs = with pkgs; [
             zig
+            git
             installShellFiles
           ];
 
@@ -64,6 +65,7 @@
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
             zig
+            git
             zls
           ];
         };

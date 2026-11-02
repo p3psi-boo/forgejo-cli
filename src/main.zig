@@ -4,6 +4,7 @@ const cli = @import("cli.zig");
 const util = @import("util.zig");
 const style = @import("style.zig");
 const config = @import("config.zig");
+const loc_mod = @import("loc.zig");
 const git_mod = @import("git.zig");
 const App = @import("app.zig").App;
 
@@ -52,22 +53,25 @@ pub fn main(init: std.process.Init) !void {
         .keys = .{},
         .git = .{ .app = undefined },
         .render = style.Render.init(kind, is_tty),
+        .loc = try loc_mod.Loc.init(init.gpa, init.environ_map, is_tty),
         .host_flag = host,
     };
+    defer app.loc.deinit();
     app.git.app = &app;
+    app.loc.setRender(&app.render);
     app.keys = try config.KeyInfo.load(&app);
 
     const cmd = list.takePositional();
     if (help and cmd == null) {
-        cli.printTopHelp();
+        cli.printTopHelp(arena);
         return;
     }
     const name = cmd orelse {
-        cli.printTopHelp();
+        cli.printTopHelp(arena);
         util.fatal("missing command", .{});
     };
     if (help) {
-        cli.help(name);
+        cli.help(arena, name);
         return;
     }
 
@@ -108,4 +112,5 @@ test {
     _ = @import("git.zig");
     _ = @import("cli.zig");
     _ = @import("util.zig");
+    _ = @import("loc.zig");
 }

@@ -6,7 +6,7 @@ steps:
     image: debian:trixie-slim
     commands:
       - apt-get update
-      - apt-get install -y --no-install-recommends ca-certificates wget xz-utils
+      - apt-get install -y --no-install-recommends ca-certificates wget xz-utils git
       - wget -q https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz
       - tar -xf zig-x86_64-linux-0.17.0.tar.xz
       - export PATH="$PWD/zig-x86_64-linux-0.17.0:$PATH"
