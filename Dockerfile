@@ -1,4 +1,0 @@
-FROM data.forgejo.org/oci/debian:trixie
-RUN apt update
-RUN apt install ca-certificates -y
-COPY target/x86_64-unknown-linux-gnu/release/fj /usr/local/bin/fj
